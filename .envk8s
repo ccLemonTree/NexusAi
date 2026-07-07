@@ -1,0 +1,56 @@
+# 基础环境变量配置
+NEXUSAI_HOME = /ai/chen/Beta/NexusAi
+
+
+
+############################
+# 智眸大模型
+INFER_BACKEND = fire
+STRUCT_EMBEDDING_MODEL = http://ainginx:10425/v1
+STRUCT_EMBEDDING_MODEL_NAME = Qwen2.5-VL-7B-Instruct
+
+
+
+############################
+# Triton 小模型框架
+TRITON_SERVER = triton-server-headless.triton.svc.cluster.local:8001
+TRITON_MODEL_STATUS = triton-server-headless.triton.svc.cluster.local:8000
+
+
+############################
+# 苍穹智搜配置
+VLLM_BASE_URL = http://my-release-2-gme.gme.svc.cluster.local:8000/v1
+OBJ_SAVE_PIC_LOCPATH = /ai/capture/back/search_pic
+OBJ_SAVE_PIC_SHOWPATH = /ai/capture/back/search_pic
+OBJ_MAX_SAVE_GB = 10
+
+# 向量库
+MILVUS_CLIENT = grpc://my-release-2-milvus.milvus.svc.cluster.local:19530
+# 向量数据库
+MILVUS_DB_NAME = vsearch
+
+# 向量数据表
+MILVUS_VECTOR_COLLECTION_NAME = vector
+MILVUS_VECTOR_FILTER_COLLECTION_NAME = vector_filter
+MILVUS_FACE_COLLECTION_NAME = face
+MILVUS_PLATE_COLLECTION_NAME = plate
+MILVUS_FACE_DATABASE_COLLECTION_NAME = face_database
+
+# 向量展示的宽高比例 按比例进行裁剪
+SHOW_BOX_SCALE = 1.77
+
+# 向量重复时间
+REVECTOR_TIME = 1300
+REVECTOR_SIMTHRESHOLD = 0.85
+
+# 向量相关
+SYSTEM_PROMPT = Find an image that matches the given text.
+
+
+
+TRITON_POOL_SIZE=70       # 略大于 ANALYSE_MAX_WORKERS，保证不排队
+ANALYSE_MAX_WORKERS=64    # 保持不变
+LOGIC_MAX_WORKERS=32      # 保持不变
+
+
+RERANKER_URL = http://reranker.reranker.svc.cluster.local:9036/v1/rerank/image-to-texts

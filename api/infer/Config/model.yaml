@@ -1,0 +1,323 @@
+# 文搜车牌检测
+PlateSearch-car:
+  0:
+    label:
+      - car
+      - truck
+      - dwztc
+  1:
+    label:
+      - plate
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 车牌检测
+  show: false
+
+# 人脸识别
+Face_Rec-person:
+  0:
+    label:
+      - face
+  1:
+    label:
+      - face_vector
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - max_num: 3
+      desc: 选取最大人脸数
+  label_desc: 人脸识别
+  show: true
+
+# 文搜人脸检测
+FaceSearch-person:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - face
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 人脸检测
+  show: false
+
+
+
+# -------------------------------------------
+# 车牌检测
+LPRec-car:
+  0:
+    label:
+      - car
+      - truck
+      - dwztc
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 车牌识别
+  show: true
+
+# 人员离岗
+Reappear-person:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - personnew
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - time: 300
+      desc: 人员离岗时间（秒）
+  label_desc: 人员离岗
+  show: true
+
+# 人员聚集
+Exceed-person:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - personnew
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - num: 10
+      desc: 聚集人数
+  label_desc: 人员聚集
+  show: true
+
+#车辆聚集
+Exceed-car:
+  0:
+    label:
+      - car
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - num: 5
+      desc: 聚集车数
+  label_desc: 车辆聚集
+  show: true
+
+# 电瓶车weidaitouk
+DpcHelment-ride:
+  0:
+    label:
+      - dpc_person
+  1:
+    label:
+      - yolov5nohead
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 骑电瓶车未戴头盔。
+  show: true
+
+#吸烟检测
+Smoking-handsmoking:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - zuidiaoyan
+  rer_label:
+      - 吸烟的人
+      - 没吸烟的人
+  param:
+    - conf: 0.1
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - rer_conf: 0.5
+      desc: 重排序置信度
+  label_desc: 违规吸烟
+  show: true
+
+Phone-handphone:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - hand_phone
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 违规玩手机
+  show: true
+
+# 非机动车违停
+illegal-ele:
+  0:
+    label:
+      - elev7
+  param:
+    - time: 300
+      desc: 违停时间
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 非机动车违停
+  show: true
+
+# 汽车违停
+illegal-car:
+  0:
+    label:
+      - car
+      - truck
+  param:
+    - time: 1
+      desc: 违停时间配置
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 机动车违停
+  show: true
+
+Ridepersons-person:
+  0:
+    label:
+      - dpc_person
+  1:
+    label:
+      - dpc_head
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 电瓶车带人
+  show: true
+
+
+Ljzperson-ljz:
+  0:
+    label:
+      - rubbish_bag
+      - bubble_chamber
+      - personnew
+      - carton
+  1:
+    label:
+      - personnew
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 垃圾堆检测
+  show: true
+
+Ztctest-cls:
+  0:
+    label:
+      - dwztc
+  1:
+    label:
+      - ztc_mutil
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 渣土车未盖篷布
+  show: false
+
+
+Safehead-person:
+  0:
+    label:
+      - personnew
+  1:
+    label:
+      - yolov5nohead
+  param:
+    - conf: 0.5
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 未戴安全帽
+  show: true
+
+Quality-image:
+  0:
+    label:
+      - hp
+      - sp
+      - tw
+      - xhp
+
+  1:
+    label:
+      - hp
+      - sp
+      - tw
+      - xhp
+  param:
+    - conf: 0.5
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 图片质量检测
+  show: true
+
+Fall-person:
+  0:
+    label:
+      - sam3_Person
+  rer_label:
+      - 跌倒的人
+      - 没跌倒的人
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+    - rer_conf: 0.55
+      desc: 重排序置信度
+  label_desc: 人员跌倒
+  show: true
+
+
+Hot-work:
+  0:
+    label:
+      - 26_start
+  1:
+    label:
+      - personnew
+  param:
+    - conf: 0.75
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 动火作业
+  show: true

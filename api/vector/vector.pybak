@@ -1,0 +1,129 @@
+# -*- coding: utf-8 -*-
+# @Time    : 2025/6/19 14:02:05
+# @Author  : 陈澔麟
+# @File    : vector.py
+# 输入 图片，提示词，问题 插入到图片向量库中
+
+import os
+
+import numpy as np
+
+from tools import http_client
+from tools.init import tritonServer
+from tools.logger_tools import app_logger
+import io,cv2
+logger = app_logger.getChild("vector")
+
+
+def _post_json(url: str, *, data=None, json_body=None):
+    try:
+        response = http_client.post(url, data=data, json=json_body)
+    except Exception as exc:
+        logger.error("请求向量服务失败 url=%s data=%s", url, data, exc_info=exc)
+        raise RuntimeError(f"向量服务请求失败: {url}") from exc
+    return response.json()
+
+
+def _post_file(url: str, pic_path: str, *, data=None):
+    try:
+        with open(pic_path, "rb") as file_obj:
+            response = http_client.post(url, data=data, files={"file": file_obj})
+    except Exception as exc:
+        logger.error("上传图片失败 url=%s path=%s", url, pic_path, exc_info=exc)
+        raise RuntimeError(f"图片向量请求失败: {pic_path}") from exc
+    return response.json()
+
+def _post_cv2file(url: str, pic_path: np.array, *, data=None):
+    try:
+
+
+        encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), 95]  # JPEG质量
+        # 编码（返回ret:是否成功，buf:编码后的字节数组）
+        ret, img_buf = cv2.imencode(f".jpeg", pic_path, encode_params)
+        if not ret:
+            raise ValueError("OpenCV图片编码失败，请检查图片格式/维度")
+        # 2. 封装为BytesIO对象（模拟rb模式的文件）
+        rb_file = io.BytesIO(img_buf.tobytes())
+        # 将文件指针移到开头（模拟打开文件时的rb模式初始状态）
+        rb_file.seek(0)
+        response = http_client.post(url, data=data, files={"file": rb_file})
+    except Exception as exc:
+        logger.error("上传图片失败 url=%s path=%s", url, pic_path, exc_info=exc)
+        raise RuntimeError(f"图片向量请求失败: {pic_path}") from exc
+    return response.json()
+
+
+
+def gme_vector(question=None, prompt="You are a helpful assistant.", pic_path=None,search_type=False,insert_type=""):
+    '''
+        原生接口：http://192.168.1.158:8997/v1/embeddings
+        JSON ： {
+                  "question": "问题",
+                  "prompt":"提示词" ,
+                  "pic_path":"图片地址"
+                }
+        return
+                {
+                    "vector": [
+                        1536
+                    ],
+                    "inference_time": 0.8195111751556396,
+                    "message": "成功生成图像向量"
+                }
+    '''
+    # 必要 条件检查
+    if question is None and pic_path is None:
+        raise ValueError("question 和 pic_path 不能为空，至少填写其中一项参数。")
+
+    jsons = {
+
+    }
+    vector = []
+    if question is not None:
+        jsons['question'] = question
+    if prompt is not None:
+        jsons['prompt'] = prompt
+    if pic_path is not None:
+        jsons['pic_path'] = pic_path
+    emb_type = 'all'
+    # 查询 走这里
+    if search_type:
+        if "人脸" in question:
+            boundings = tritonServer.run("dlib_face", pic_path, emb_type, label_to_detect=['face_vector'])
+            vector.append(np.array(boundings[0].parames_vector, dtype=np.float64))
+
+        elif pic_path is None:
+            payload = _post_json(os.getenv('SEARCH_VECTOR_URL'), data={"question": jsons['question']})
+            vector.append(np.array(payload[0],dtype=np.float64))
+            emb_type = 'text'
+
+        elif question is None:
+            payload = _post_file(os.getenv('SEARCH_VECTOR_URL'), pic_path)
+            vector.append(np.array(payload[0],dtype=np.float64))
+            emb_type = 'picture'
+        else:
+            payload = _post_file(os.getenv('SEARCH_VECTOR_URL'), pic_path,data={"question": jsons['question']})
+            vector.append(np.array(payload[0], dtype=np.float64))
+            emb_type = 'all'
+
+    # 插入 向量
+    else:
+        if (question is not None) and (pic_path is not None):
+            #text_response = requests.post(os.getenv('TEXT_VECTOR_URL'), json={"inputs": jsons['question']})  # [jsons['question']]})
+            #text_response_data = text_response.json()[0]
+            if insert_type == "face":
+                boundings = tritonServer.run("dlib_face",pic_path,emb_type,label_to_detect=['face_vector'])
+                vector.append(np.array(boundings[0].parames_vector,dtype=np.float64))
+            elif insert_type =="PlateSearch-car":
+                payload = _post_cv2file(os.getenv('SEARCH_VECTOR_URL'), data={"question": jsons['question']})
+                vector.append(np.array(payload[0], dtype=np.float64))
+
+            else:
+                pic_response = _post_cv2file(os.getenv('IMAGE_VECTOR_URL'),
+                                         pic_path=pic_path)
+                pic_response_data = pic_response[0]
+                vector.append(np.array(pic_response_data,dtype=np.float64))
+
+    return vector,emb_type
+
+

@@ -1,0 +1,13 @@
+dotenv
+fastapi
+requests
+opencv-python
+pymilvus
+tritonclient[all]
+sympy
+pillow
+transformers
+uvicorn
+jinja2
+psutil
+pyproj

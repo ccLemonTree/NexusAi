@@ -1,0 +1,12 @@
+{
+  "name": "",
+  "api_key": "",
+  "url": "",
+  "endpoint": "",
+  "example_url": "http://10.245.3.26:10010",
+  "mode": "对话",
+  "max_token": 4096,
+  "function_calling": "支持或不支持",
+  "stream": "流式输出",
+  "type": "vlm"
+}

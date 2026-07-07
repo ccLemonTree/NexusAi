@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env.local
+.env.production
+
+# Environment variables (contains credentials)
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Model weights (large binary files)
+api/infer/Triton_model/weights/
+
+# Temporary / cache
+*.tmp
+*.cache
+.pytest_cache/
+.mypy_cache/
+
+# Binary data / pickle files
+api/infer/Picture_pkl/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage
+.coverage
+htmlcov/
