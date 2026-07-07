@@ -1,3 +1,6 @@
+# CodeGraph index
+.codegraph/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -35,9 +38,6 @@ desktop.ini
 # Logs
 *.log
 logs/
-
-# Model weights (large binary files)
-api/infer/Triton_model/weights/
 
 # Temporary / cache
 *.tmp
