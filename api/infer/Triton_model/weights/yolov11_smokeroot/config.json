@@ -1,0 +1,38 @@
+{
+  "name": "yolov11_smokeroot",
+  "platform": "onnxruntime_onnx",
+  "max_batch_size": 0,
+    "input": [
+        {
+            "name": "input",
+            "data_type": "TYPE_FP32",
+            "dims": [
+              1,
+                3,
+                640,
+                640
+            ],
+            "is_shape_tensor": false
+        }
+    ],
+    "output": [
+        {
+            "name": "output0",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                8,
+                8400
+            ],
+            "is_shape_tensor": false
+        }
+  ],
+	"instance_group": ["GPU0","GPU1"],
+	"model_version": [1],
+	"conf_thres": 0.2,
+	"iou_thres": 0.1,
+	"parameters": {},
+    "classes": ["smokegen"],
+    "classes_zh": ["烟火检测-含根部"],
+    "show": "false"
+
+}

@@ -1,0 +1,46 @@
+{
+  "name": "lpr_embed_tokens",
+  "platform": "tensorrt_plan",
+  "max_batch_size": 0,
+  "input": [
+    {
+      "name": "input_ids",
+      "data_type": "TYPE_INT32",
+      "dims": [
+        1,
+        -1
+      ]
+    }
+  ],
+  "output": [
+    {
+      "name": "input_embeds",
+      "data_type": "TYPE_FP32",
+      "dims": [
+        1,
+        -1,
+        896
+      ]
+    }
+  ],
+  "instance_group": [
+    {
+      "kind": "KIND_GPU",
+      "profile": "0"
+    }
+  ],
+  "conf_thres": 0.35,
+  "iou_thres": 0.15,
+  "parameters": {},
+  "model_version": [
+    1
+  ],
+  "classes": [
+    "fastvlm_embed_lpr"
+  ],
+  "classes_zh": [
+    "embed层"
+  ],
+  "show": "false"
+
+}

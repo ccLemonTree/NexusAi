@@ -1,0 +1,57 @@
+{
+	"name": "resnet_vq",
+	"platform": "onnxruntime_onnx",
+	"max_batch_size": 0,
+	"input": [{
+		"name": "images",
+		"data_type": "TYPE_FP32",
+		"dims": [
+			1,
+			3,
+			224,
+			224
+		]
+	}],
+	"output": [{
+		"name": "output",
+		"data_type": "TYPE_FP32",
+		"dims": [
+			1,
+			9
+		]
+	}],
+	"instance_group": [
+		"GPU0",
+		"GPU1"
+	],
+	"model_version": [
+		1
+	],
+	"conf_thres": 0.75,
+	"iou_thres": 0.5,
+	"parameters": {},
+	"classes": [
+		"resnet_normal",
+		"resnet_blurry_scene",
+		"resnet_stripe_noise",
+		"resnet_snow_noise",
+		"resnet_no_signal",
+		"resnet_blank_screen",
+		"resnet_colour_cast",
+		"resnet_obstruction_vegetation",
+		"resnet_obstruction_pillar"
+	],
+    "classes_zh": [
+      "摄像头正常",
+      "摄像头严重模糊",
+      "摄像头条纹屏幕",
+      "摄像头雪花屏幕",
+      "摄像头无信号",
+      "摄像头黑屏",
+      "摄像头色偏",
+      "摄像头遮挡",
+      "摄像头遮挡"
+    ],
+    "show": "true"
+
+}

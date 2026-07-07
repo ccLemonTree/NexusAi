@@ -1,0 +1,38 @@
+{
+  "name": "yolov5_smoke",
+  "models_name": "yolov5_smoke_v1.onnx",
+  "platform" : "tensorrt_plan",
+  "max_batch_size": 1,
+  "dynamic_batching" : { },
+  "input": [
+        {
+            "name": "images",
+            "data_type": "TYPE_FP32",
+            "dims": [
+              1,
+                3,
+                640,
+                640
+            ],
+            "is_shape_tensor": false
+        }
+    ],
+    "output": [
+        {
+            "name": "output",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                25200,
+                85
+            ],
+            "is_shape_tensor": false
+        }
+  ],
+	"conf_thres": 0.25,
+	"iou_thres": 0.2,
+	"parameters": {},
+    "model_version": [1],
+    "classes": ["whitesmoke", "blacksmoke"],
+    "classes_zh": ["高位-烟雾"],
+    "show": "true"
+}

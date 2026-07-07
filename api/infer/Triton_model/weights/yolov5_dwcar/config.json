@@ -1,0 +1,39 @@
+{
+  "name": "yolov5_dwcar",
+  "models_name": "yolov5_smoke_v1.onnx",
+  "platform" : "tensorrt_plan",
+  "max_batch_size": 1,
+  "dynamic_batching" : { },
+  "input": [
+        {
+            "name": "input",
+            "data_type": "TYPE_FP32",
+            "dims": [
+              1,
+                3,
+                640,
+                640
+            ],
+            "is_shape_tensor": false
+        }
+    ],
+    "output": [
+        {
+            "name": "output",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                25200,
+                85
+            ],
+            "is_shape_tensor": false
+        }
+  ],
+	"conf_thres": 0.25,
+	"iou_thres": 0.2,
+	"parameters": {},
+    "model_version": [1],
+    "classes": ["dwkuaidiche","dwzaihuoche","dwtruck","dwwjj","dwttj","dwylj","dwssc","dwjbc","dwbus","dwwpc","dwmidtruck","dwvan","dwztc","dwzk","dwchache","dwchanche","dwcrane_work","dwrenliche","dwygc"],
+    "classes_zh": ["快递车","载货三轮车","小货车","挖掘机","推土机","压路机","洒水车","搅拌车","公交车","雾炮车","中卡","厢式货车","渣土车","重卡","叉车","铲车","起重机-吊臂工作时","人力三轮车","油罐车"],
+    "show": "true"
+
+}

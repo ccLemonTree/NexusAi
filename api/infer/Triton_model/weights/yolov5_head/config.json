@@ -1,0 +1,76 @@
+{
+  "name": "yolov5_head",
+  "platform": "tensorrt_plan",
+  "backend": "tensorrt",
+  "version_policy": {
+    "latest": {
+      "num_versions": 1
+    }
+  },
+  "max_batch_size": 1,
+    "input": [
+        {
+            "name": "input",
+            "data_type": "TYPE_FP32",
+            "dims": [
+              1,
+                3,
+                640,
+                640
+            ],
+            "is_shape_tensor": false
+        }
+    ],
+    "output": [
+        {
+            "name": "output",
+            "data_type": "TYPE_FP32",
+            "dims": [
+                25200,
+                85
+            ],
+            "is_shape_tensor": false
+        }
+  ],
+  "batch_input": [],
+  "batch_output": [],
+  "optimization": {
+    "priority": "PRIORITY_DEFAULT",
+    "input_pinned_memory": {
+      "enable": true
+    },
+    "output_pinned_memory": {
+      "enable": true
+    },
+    "gather_kernel_buffer_threshold": 0,
+    "eager_batching": false
+  },
+  "instance_group": [
+    {
+      "name": "yolov5_firstsmoke",
+      "kind": "KIND_GPU",
+      "count": 1,
+      "gpus": [
+        0
+      ],
+      "secondary_devices": [],
+      "profile": [],
+      "passive": false,
+      "host_policy": ""
+    }
+  ],
+  "default_model_filename": "model.plan",
+  "cc_model_filenames": {},
+  "metric_tags": {},
+  "parameters": {},
+  "model_warmup": [],
+
+	"model_version": [1],
+	"conf_thres": 0.84,
+	"iou_thres": 0.7,
+    "classes": ["dpc_head"],
+   "classes_zh": [
+    "电瓶车人头"
+  ],
+  "show": "false"
+}

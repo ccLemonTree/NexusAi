@@ -1,0 +1,37 @@
+{
+  "name": "retina_face",
+  "max_batch_size": 1,
+    "input": [
+        {
+            "name": "image",
+            "data_type": "TYPE_FP32",
+            "dims":[ 1, 1000, 1000, 3 ]
+        }
+    ],
+    "output": [
+        {
+            "name": "Concat_220:0",
+            "data_type": "TYPE_FP32",
+            "dims": [ 41236, 10 ]
+        },
+      {
+            "name": "Softmax_271:0",
+            "data_type": "TYPE_FP32",
+            "dims": [ 41236, 2 ]
+        },
+      {
+            "name": "Concat_270:0",
+            "data_type": "TYPE_FP32",
+            "dims": [ 41236, 4 ]
+        }
+    ],
+	"instance_group": ["GPU0","GPU1"],
+	"model_version": [1],
+	"conf_thres": 0.67,
+	"iou_thres": 0.4,
+	"parameters": {},
+    "classes": ["face" ],
+    "classes_zh": ["人脸检测"],
+    "show": "true"
+
+}

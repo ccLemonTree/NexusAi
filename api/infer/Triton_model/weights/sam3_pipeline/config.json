@@ -1,0 +1,183 @@
+{
+  "name": "sam3_pipeline",
+  "backend": "python",
+  "max_batch_size": 0,
+  "input": [
+    {
+      "name": "image",
+      "data_type": "TYPE_UINT8",
+      "dims": [
+        1,
+	3,
+        1008,
+        1008
+      ]
+    },
+    {
+      "name": "text_prompts",
+      "data_type": "TYPE_STRING",
+      "dims": [
+        -1
+      ]
+    }
+  ],
+  "output": [
+    {
+      "name": "boxes",
+      "data_type": "TYPE_FP32",
+      "dims": [
+        -1,
+        4
+      ]
+    },
+    {
+      "name": "scores",
+      "data_type": "TYPE_FP32",
+      "dims": [
+        -1
+      ]
+    },
+    {
+      "name": "classes",
+      "data_type": "TYPE_FP32",
+      "dims": [
+        -1
+      ]
+    }
+  ],
+  "instance_group": [
+    "GPU0"
+  ],
+  "model_version": [
+    1
+  ],
+  "conf_thres": 0.7,
+  "iou_thres": 0.5,
+  "parameters": {},
+  "classes": [
+    "sam3_Face",
+    "sam3_Blue hat",
+    "sam3_Safety helmet",
+    "sam3_Safety goggles",
+    "sam3_Mask",
+    "sam3_Green reflective vest",
+    "sam3_Red reflective vest",
+    "sam3_Gloves",
+    "sam3_Light blue clothes",
+    "sam3_Men",
+    "sam3_Women",
+    "sam3_Children",
+    "sam3_Couple",
+    "sam3_Phone",
+    "sam3_Person",
+    "sam3_Fishing",
+    "sam3_People swimming",
+    "sam3_Bare-chested",
+    "sam3_People fighting",
+    "sam3_Crowd gathering",
+    "sam3_Banner-waver",
+    "sam3_Fallen person",
+    "sam3_The sweeper",
+    "sam3_Chef's hat",
+    "sam3_Blue vest",
+    "sam3_Truck",
+    "sam3_Car",
+    "sam3_Minivan",
+    "sam3_SUV",
+    "sam3_Concrete mixer truck",
+    "sam3_Tricycle",
+    "sam3_Bicycle",
+    "sam3_Bus",
+    "sam3_Fire truck",
+    "sam3_Ambulance",
+    "sam3_Fishing boat",
+    "sam3_Blue license plate",
+    "sam3_Green license plate",
+    "sam3_Tanker truck",
+    "sam3_Cat",
+    "sam3_Dog",
+    "sam3_Mouse",
+    "sam3_Trash can",
+    "sam3_Cardboard box",
+    "sam3_Trash bag",
+    "sam3_Sand Dune",
+    "sam3_Pile of stones",
+    "sam3_Excavator",
+    "sam3_Wire",
+    "sam3_Gun",
+    "sam3_Tables",
+    "sam3_Chairs",
+    "sam3_Forklift",
+    "sam3_Fire extinguisher",
+    "sam3_Cup",
+    "sam3_Guardrail",
+    "sam3_Safety Cone",
+    "sam3_Bollard"
+  ],
+  "classes_zh": [
+    "人脸",
+    "蓝色防尘服帽子",
+    "头盔",
+    "护目镜",
+    "口罩",
+    "绿色反光衣",
+    "红色反光衣",
+    "手套",
+    "蓝色防尘服衣服",
+    "男人",
+    "女人",
+    "小孩",
+    "一男一女",
+    "玩手机",
+    "人",
+    "钓鱼",
+    "游泳",
+    "光膀",
+    "打架",
+    "聚集",
+    "拉横幅",
+    "人员跌倒",
+    "打扫人员",
+    "厨师帽",
+    "蓝色马甲",
+    "货车",
+    "小汽车",
+    "面包车",
+    "SUV/MPV",
+    "水泥车",
+    "三轮车",
+    "自行车",
+    "大巴",
+    "消防车",
+    "救护车",
+    "渔船",
+    "蓝牌",
+    "绿牌",
+    "油罐车",
+    "流浪猫",
+    "流浪狗",
+    "老鼠",
+    "垃圾桶",
+    "纸箱",
+    "垃圾袋",
+    "沙堆",
+    "石子堆",
+    "挖掘机",
+    "电线",
+    "武器遗漏",
+    "桌子",
+    "椅子",
+    "叉车",
+    "灭火器",
+    "水杯奶茶",
+    "护栏",
+    "雪糕筒",
+    "反光安全护住"
+  ],
+  "show": "true"
+}
+
+
+
+
+
