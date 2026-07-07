@@ -112,7 +112,17 @@
     "sam3_Cup",
     "sam3_Guardrail",
     "sam3_Safety Cone",
-    "sam3_Bollard"
+    "sam3_Bollard",
+    "sam3_Plastic bag",
+    "sam3_Banner",
+    "sam3_Advertising cloth",
+    "sam3_Agricultural mulch film",
+    "sam3_Dustproof net",
+    "sam3_Hydrogen balloon",
+    "sam3_Drone",
+    "sam3_Color steel plate",
+    "sam3_Prefab cabin",
+    "sam3_Billboard"
   ],
   "classes_zh": [
     "人脸",
@@ -172,7 +182,17 @@
     "水杯奶茶",
     "护栏",
     "雪糕筒",
-    "反光安全护住"
+    "反光安全护住",
+    "塑料袋",
+    "横幅",
+    "广告布",
+    "地膜",
+    "防尘网",
+    "氢气球",
+    "无人机",
+    "彩钢板",
+    "活动板房",
+    "广告牌"
   ],
   "show": "true"
 }
