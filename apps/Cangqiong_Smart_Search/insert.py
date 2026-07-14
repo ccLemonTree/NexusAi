@@ -109,12 +109,21 @@ async def vec2milvus(request: InputRequestData):
     logger.info(f"from [{request.device_id}] --inputs：{firstAnalysis} -==:{boundings}")
     logger.info(f"from [{request.device_id}] --boundings：{boundings}")
     base_dir = os.path.join(obj_root, request.device_id, year, month, day)
-    large_image_url = request.pic_url
-    logger.info(f"图片地址： [{request.pic_url}] --analyse：[]")
-    if len(boundings) == 0:
-        logger.info(f"from [{request.device_id}] --analyse：[]")
+    if request.pic_url:
+        large_image_url = request.pic_url
+        if len(boundings) == 0:
+            logger.info(f"from [{request.device_id}] --analyse：[]")
+        else:
+            logger.info(f"from [{request.device_id}] --analyse_obj：{boundings}]")
+            
     else:
-        logger.info(f"from [{request.device_id}] --analyse_obj：{boundings}]")
+        large_image_url = os.path.join(base_dir, f"{uuid.uuid4()}.jpeg")
+        if len(boundings) == 0:
+            logger.info(f"from [{request.device_id}] --analyse：[]")
+        else:
+            os.makedirs(base_dir, exist_ok=True)
+            pil_image.save(large_image_url)
+            logger.info(f"from [{request.device_id}] --analyse_obj：{boundings}]")
     jsq = 0
     for k, info in enumerate(boundings):
         text = ""
@@ -222,7 +231,7 @@ async def vec2milvus_by_file(
     try:
         ts = int(captureTime)
         if ts > 10000000000:
-            ts = ts / 1000
+            ts = ts // 1000
         now = datetime.fromtimestamp(ts)
     except Exception as e:
         logger.error(f"时间戳解析失败，使用当前时间兜底: {e}")
@@ -248,8 +257,26 @@ async def vec2milvus_by_file(
         logger.info(f"from [{deviceId}] --error {e}")
         return {"message": "插入失败"}
 
-    boundings = analyseRun(setsLabel, [img])
-    large_image_url = picUrl
+    loop = asyncio.get_event_loop()
+    boundings = await loop.run_in_executor(executor, analyseRun, setsLabel, [img])
+
+    base_dir = os.path.join(obj_root, deviceId, year, month, day)
+    if picUrl:
+        large_image_url = picUrl
+        if len(boundings) == 0:
+            logger.info(f"from [{deviceId}] --analyse：[]")
+        else:
+            logger.info(f"from [{deviceId}] --analyse_obj：{boundings}]")
+            
+    else:
+        large_image_url = os.path.join(base_dir, f"{uuid.uuid4()}.jpeg")
+        if len(boundings) == 0:
+            logger.info(f"from [{deviceId}] --analyse：[]")
+        else:
+            os.makedirs(base_dir, exist_ok=True)
+            pil_image.save(large_image_url)
+            logger.info(f"from [{deviceId}] --analyse_obj：{boundings}]")
+
 
     jsq = 0
     for info in boundings:
@@ -279,7 +306,7 @@ async def vec2milvus_by_file(
                 device_id=deviceId,
                 capture_time=ts,
                 device_name=deviceName,
-                channel_id=int(channelId),
+                channel_id=int(channelId) if channelId else 0,
                 channel_name=channelName,
                 channel_number=channelNumber,
                 x1=info.u1,

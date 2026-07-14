@@ -10,7 +10,7 @@ from tools.init import cfg
 import struct,os
 from tools.init import client
 '''
-人脸识别 
+人脸识别
 
 
 '''
@@ -19,7 +19,7 @@ class Model(ModelClass):
         try:
             boundingboxs = []
             labels = cfg.logicModelDict[self.logicModelName][1]['label']
-            models = LabelToModel(labels, cfg.unlogicModelDict)
+            models ,modelConf= LabelToModel(labels, cfg.unlogicModelDict)
             for i, info in enumerate(self.logicResult):
                 cut_img = self.picture[info.y1:info.y2, info.x1:info.x2]
                 for aly, value in models.items():
@@ -30,7 +30,7 @@ class Model(ModelClass):
                         continue
 
                     for sonbounding in bounding:
-                        facevector = np.array(sonbounding.parames_vector['facevector'], np.float32)
+                        facevector = np.array(sonbounding.parames_vector, np.float32)
                         search_data = client.search(
                             collection_name=os.getenv("MILVUS_FACE_DATABASE_COLLECTION_NAME"),
                             data=[facevector],
@@ -43,6 +43,16 @@ class Model(ModelClass):
                         sonbounding.classname = self.logicModelName
                         distance = search_data[0][0]['distance']
                         if distance > self.conf:
+                            sonbounding.x1 = info.x1
+                            sonbounding.x2 = info.x2
+                            sonbounding.y1 = info.y1
+                            sonbounding.y2 = info.y2
+                            sonbounding.image_width = info.image_width
+                            sonbounding.image_height = info.image_height
+                            sonbounding.u1 = info.u1
+                            sonbounding.u2 = info.u2
+                            sonbounding.v1 = info.v1
+                            sonbounding.v2 = info.v2
                             sonbounding.parames_vector = {
                                 "face_Info":{
                                     "face_id": search_data[0][0]['entity']['uuid'],
@@ -58,5 +68,3 @@ class Model(ModelClass):
         finally:
             pass
         return [],[]
-
-
