@@ -322,3 +322,16 @@ Hot-work:
       desc: 重叠度
   label_desc: 动火作业
   show: true
+
+
+Ocr-pp:
+  0:
+    label:
+      - ocr
+  param:
+    - conf: 0.75
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 人流量识别
+  show: true
