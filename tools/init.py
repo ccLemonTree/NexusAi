@@ -14,7 +14,8 @@ infer_backend = {
 }
 
 
-client = MilvusClient(uri=os.getenv("MILVUS_CLIENT"), db_name=os.getenv("MILVUS_DB_NAME"))
+#client = MilvusClient(uri=os.getenv("MILVUS_CLIENT"), db_name=os.getenv("MILVUS_DB_NAME"))
+client = None
 chat_infer = infer_backend[os.getenv("INFER_BACKEND")](os.getenv("STRUCT_EMBEDDING_MODEL"), os.getenv("STRUCT_EMBEDDING_MODEL_NAME"))
 tritonServer = triton_inference(os.path.join(os.getenv("NEXUSAI_HOME"),"api","infer","Triton_model","weights"),
                                 urls=[os.getenv("TRITON_SERVER")])

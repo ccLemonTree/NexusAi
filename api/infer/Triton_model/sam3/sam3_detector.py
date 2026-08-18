@@ -25,7 +25,7 @@ def sam3(triton_client, service_name, init_data, img, label_rules, box_info, con
 
     img_resized = img.convert('RGB').resize((1008, 1008))
     # img_data = (np.array(img_resized).astype(np.float32) / 127.5 - 1.0).transpose(2, 0, 1)[None]
-    img_data = np.array(img_resized).astype(np.uint8).transpose(2, 0, 1)[None]
+    img_data = np.array(img_resized).astype(np.float32).transpose(2, 0, 1)[None]
 
     # --- 2. 初始化 time_json ---
     time_json = {
