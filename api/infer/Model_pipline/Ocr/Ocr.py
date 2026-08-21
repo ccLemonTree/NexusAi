@@ -11,8 +11,6 @@ class Model(ModelClass):
 
     def execute(self):
         try:
-            # 注意：res 必须是【OCR识别结果列表】，不是你存好的{进入,离开}字典！
-            # 确认：self.logicResult[0].parames_vector["idcard"] 在进入循环前，是ocr原始list
             res = self.logicResult[0].parames_vector["ocr_list"]
             enter_text = ""
             leave_text = ""
@@ -30,27 +28,34 @@ class Model(ModelClass):
                 if "离开" in txt:
                     leave_text = txt
 
-            # 容错：防止识别不到文本 split 报错
-            enter_num = enter_text.split("：")[-1] if enter_text else ""
-            leave_num = leave_text.split("：")[-1] if leave_text else ""
+            # 兼容全角：： 和半角 :
+            enter_num = ""
+            if enter_text:
+                t = enter_text.replace("：", ":")
+                enter_num = t.split(":")[-1].strip()
+
+            leave_num = ""
+            if leave_text:
+                t = leave_text.replace("：", ":")
+                leave_num = t.split(":")[-1].strip()
+
+            if enter_text == "" or leave_num == "":
+                return [], []
 
             # 覆盖写入
             self.logicResult[0].parames_vector["ocr_list"] = {
                 "进入": enter_num,
                 "离开": leave_num
             }
+            self.logicResult[0].classname = self.logicModelName
 
-            # ✅ 修复关键：不要返回 BoundingBox 对象！根据上层需求调整返回值
-            # 方案A：如果你本意返回logicResult整体（数组形式）
             boundingboxs = self.logicResult
-            # 方案B：如果只需要第0条，套进列表，避免上层当成单个对象
-            # boundingboxs = [self.logicResult[0]]
-
             return boundingboxs, []
         except Exception as e:
             logger.error(f"{self.logicModelName} {e}")
             logger.error(e.__traceback__.tb_frame.f_globals["__file__"])
             logger.error(e.__traceback__.tb_lineno)
 
-        return [],[]
+        return [], []
+
 

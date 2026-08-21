@@ -23,6 +23,7 @@ env/
 
 # Environment variables (contains credentials)
 .env
+scripts/rolling-restart.conf
 
 # IDE
 .vscode/
