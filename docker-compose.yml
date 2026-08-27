@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      NEXUSAI_HOME: /app
     ports:
       - "${NEXUSAI_PORT:-10012}:10012"
     volumes:

@@ -3,6 +3,7 @@ fastapi
 requests
 opencv-python
 openai
+python-multipart
 pymilvus
 tritonclient[all]
 sympy
