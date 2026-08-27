@@ -21,6 +21,11 @@ from tools.logger_tools import app_logger, request_logger, error_logger, configu
 app = FastAPI()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 # 挂载静态文件
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

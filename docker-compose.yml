@@ -1,0 +1,17 @@
+services:
+  nexusai:
+    image: nexusai-http:local
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${NEXUSAI_PORT:-10012}:10012"
+    volumes:
+      - /ai/capture/back/search_pic:/ai/capture/back/search_pic
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:10012/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
