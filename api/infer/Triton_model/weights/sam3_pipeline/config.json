@@ -51,7 +51,7 @@
   "model_version": [
     1
   ],
-  "conf_thres": 0.7,
+  "conf_thres": 0.85,
   "iou_thres": 0.5,
   "parameters": {},
   "classes": [
@@ -124,7 +124,13 @@
     "sam3_Prefab cabin",
     "sam3_Billboard",
     "sam3_License plate",
-    "sam3_ev charging gun"
+    "sam3_ev charging gun",
+    "sam3_Litter",
+    "sam3_Banner",
+    "sam3_Construction debris",
+    "sam3_Advertisement sticker",
+    "sam3_Paper notice",
+    "sam3_Fishing rod"
   ],
   "classes_zh": [
     "人脸",
@@ -196,7 +202,13 @@
     "活动板房",
     "广告牌",
     "车牌",
-    "充电枪"
+    "充电枪",
+    "垃圾",
+    "横幅",
+    "建筑垃圾",
+    "卡片",
+    "传单",
+    "鱼竿"
   ],
   "show": "true"
 }

@@ -6,10 +6,11 @@
 @Description : 该文件的功能描述
 @Version : 1.0
 """
+
+
 import numpy as np
 
 from api.infer.Utils.boundingbox import BoundingBox
-
 
 def nms(boxes, scores, iou_threshold=0.45):
     """
@@ -48,7 +49,6 @@ def postprocess(output_dict, origin_w, origin_h, conf_thres=0.5, label_names=[],
     boxes = output_dict.get("boxes")
     scores = output_dict.get("scores")
     classes = output_dict.get("classes")
-
     if boxes is None or scores is None:
         print("[Postprocess Warning] 缺少 boxes 或 scores")
         return []
@@ -104,7 +104,7 @@ def postprocess(output_dict, origin_w, origin_h, conf_thres=0.5, label_names=[],
         x2 = max(0.0, min(x2, origin_w))
         y2 = max(0.0, min(y2, origin_h))
 
-        raw_box_list.append([x1, x2, y1, y2])
+        raw_box_list.append([x1, y1, x2, y2])
         raw_score_list.append(float(score))
         raw_cls_idx_list.append(c_idx)
 
@@ -114,11 +114,17 @@ def postprocess(output_dict, origin_w, origin_h, conf_thres=0.5, label_names=[],
     # NMS过滤
     box_arr = np.array(raw_box_list, dtype=np.float32)
     score_arr = np.array(raw_score_list, dtype=np.float32)
-    keep_idx = nms(box_arr, score_arr, iou_threshold=0.45)
+    keep_idx = []
+    for c_idx in set(raw_cls_idx_list):
+        indexes = np.where(np.array(raw_cls_idx_list) == c_idx)[0]
+        rule = label_rules.get(label_names[c_idx], {}) if isinstance(label_rules, dict) else {}
+        iou_threshold = rule.get('iou', 0.45) if isinstance(rule, dict) else 0.45
+        keep_idx.extend(indexes[nms(box_arr[indexes], score_arr[indexes], iou_threshold=iou_threshold)])
+    keep_idx.sort(key=lambda index: raw_score_list[index], reverse=True)
 
     detected_objects = []
     for idx in keep_idx:
-        x1, x2, y1, y2 = raw_box_list[idx]
+        x1, y1, x2, y2 = raw_box_list[idx]
         s = raw_score_list[idx]
         c_idx = raw_cls_idx_list[idx]
         label_name = label_names[c_idx]
@@ -137,3 +143,7 @@ def postprocess(output_dict, origin_w, origin_h, conf_thres=0.5, label_names=[],
             print(f"[Postprocess Error] {e}")
 
     return detected_objects
+
+
+
+

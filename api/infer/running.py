@@ -9,6 +9,17 @@ from api.infer.Utils.analyse_utils import LabelToModel
 from api.infer.Utils.boundingbox import BoundingBox
 
 
+def expand_logic_label_rules(label_rules, logic_model_dict):
+    expanded_rules = dict(label_rules)
+    for logic_label, rule in label_rules.items():
+        for stage in logic_model_dict.get(logic_label, {}).values():
+            if not isinstance(stage, dict):
+                continue
+            for label in stage.get("label", []):
+                expanded_rules[label] = rule
+    return expanded_rules
+
+
 def analyseRun(setsLabel, imgs, camerInfo=CameraInfo(),label_rules={},roi=None, label_to_detect=[], box_info=BoundingBox(0, 0, 0, 0, 0, 0, 1, 1, "cls")):
     """
     param:
@@ -20,6 +31,7 @@ def analyseRun(setsLabel, imgs, camerInfo=CameraInfo(),label_rules={},roi=None, 
     Return : [BoundingBox , ...]
     """
     img = imgs[0]
+    label_rules = expand_logic_label_rules(label_rules, cfg.logicModelDict)
     # 列表展平 去重
     setsLabel = set(setsLabel)  # ['car', 'illegal-car']
     # 逻辑标签集合
