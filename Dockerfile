@@ -21,6 +21,6 @@ RUN pip install --no-cache-dir --index-url https://mirrors.aliyun.com/pypi/simpl
 
 COPY . .
 
-EXPOSE 10012
+EXPOSE 8000
 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "main:app", "--workers", "4", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,18 +1,42 @@
+x-nexusai-env: &nexusai-env
+  NEXUSAI_HOME: /app
+  INFER_BACKEND: "${INFER_BACKEND:-fire}"
+  STRUCT_EMBEDDING_MODEL: "${STRUCT_EMBEDDING_MODEL:?STRUCT_EMBEDDING_MODEL is required}"
+  STRUCT_EMBEDDING_MODEL_NAME: "${STRUCT_EMBEDDING_MODEL_NAME:-Qwen2.5-VL-7B-Instruct}"
+  TRITON_SERVER: "${TRITON_SERVER:?TRITON_SERVER is required}"
+  TRITON_MODEL_STATUS: "${TRITON_MODEL_STATUS:?TRITON_MODEL_STATUS is required}"
+  TRITON_POOL_SIZE: "${TRITON_POOL_SIZE:-70}"
+  ANALYSE_MAX_WORKERS: "${ANALYSE_MAX_WORKERS:-64}"
+  LOGIC_MAX_WORKERS: "${LOGIC_MAX_WORKERS:-32}"
+  MILVUS_CLIENT: "${MILVUS_CLIENT:?MILVUS_CLIENT is required}"
+  MILVUS_DB_NAME: "${MILVUS_DB_NAME:-vsearch}"
+  MILVUS_VECTOR_COLLECTION_NAME: "${MILVUS_VECTOR_COLLECTION_NAME:-vector}"
+  MILVUS_VECTOR_FILTER_COLLECTION_NAME: "${MILVUS_VECTOR_FILTER_COLLECTION_NAME:-vector_filter}"
+  MILVUS_FACE_COLLECTION_NAME: "${MILVUS_FACE_COLLECTION_NAME:-face}"
+  MILVUS_PLATE_COLLECTION_NAME: "${MILVUS_PLATE_COLLECTION_NAME:-plate}"
+  MILVUS_FACE_DATABASE_COLLECTION_NAME: "${MILVUS_FACE_DATABASE_COLLECTION_NAME:-face_database}"
+  VLLM_BASE_URL: "${VLLM_BASE_URL:?VLLM_BASE_URL is required}"
+  VLLM_API_KEY: "${VLLM_API_KEY:-EMPTY}"
+  RERANKER_URL: "${RERANKER_URL:?RERANKER_URL is required}"
+  RERANK_TEXT_VECTOR_URL: "${RERANK_TEXT_VECTOR_URL:-}"
+  OBJ_SAVE_PIC_LOCPATH: "${OBJ_SAVE_PIC_LOCPATH:-/ai/capture/back/search_pic}"
+  OBJ_MAX_SAVE_GB: "${OBJ_MAX_SAVE_GB:-10}"
+  IMAGE_ROOT_DIR: "${IMAGE_ROOT_DIR:-/ai}"
+  INFO_JSON: "${INFO_JSON:-/ai/capture/back/search_pic/vector_count.json}"
+
 services:
   nexusai:
     image: nexusai-http:local
     build: .
+    command: ["uvicorn", "main:app", "--workers", "4", "--host", "0.0.0.0", "--port", "8000"]
     restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      NEXUSAI_HOME: /app
+    environment: *nexusai-env
     ports:
-      - "${NEXUSAI_PORT:-10012}:10012"
+      - "${NEXUSAI_PORT:-8000}:8000"
     volumes:
       - /ai/capture/back/search_pic:/ai/capture/back/search_pic
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:10012/health', timeout=2)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 30s
       timeout: 5s
       retries: 3
