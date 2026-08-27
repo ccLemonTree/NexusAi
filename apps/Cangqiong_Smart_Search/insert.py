@@ -16,7 +16,7 @@ from tools.init import client, chat_infer
 from api.infer.utils import siou
 from tools.logger_tools import CangQiong_Smart_Insert_Logger as logger
 import asyncio
-from apps.Cangqiong_Smart_Analyse.analyse import executor
+from tools.concurrency import get_inference_executor
 from api.infer.Utils.result_utils import Unlogic_run
 from api.infer.Utils.analyse_utils import LabelToModel
 from api.infer.running import analyseRun
@@ -27,6 +27,7 @@ from io import BytesIO
 import re
 
 router = APIRouter()
+search_executor = get_inference_executor()
 milvus_type = {
     "face": "MILVUS_FACE_COLLECTION_NAME",
     "PlateSearch-car": "MILVUS_PLATE_COLLECTION_NAME"
@@ -105,7 +106,7 @@ async def vec2milvus(request: InputRequestData):
         return {"message": "插入失败"}
     firstAnalysis = setsLabel
     loop = asyncio.get_event_loop()
-    boundings = await loop.run_in_executor(executor, analyseRun, firstAnalysis, [img])
+    boundings = await loop.run_in_executor(search_executor, analyseRun, firstAnalysis, [img])
     logger.info(f"from [{request.device_id}] --inputs：{firstAnalysis} -==:{boundings}")
     logger.info(f"from [{request.device_id}] --boundings：{boundings}")
     base_dir = os.path.join(obj_root, request.device_id, year, month, day)
@@ -258,7 +259,7 @@ async def vec2milvus_by_file(
         return {"message": "插入失败"}
 
     loop = asyncio.get_event_loop()
-    boundings = await loop.run_in_executor(executor, analyseRun, setsLabel, [img])
+    boundings = await loop.run_in_executor(search_executor, analyseRun, setsLabel, [img])
 
     base_dir = os.path.join(obj_root, deviceId, year, month, day)
     if picUrl:

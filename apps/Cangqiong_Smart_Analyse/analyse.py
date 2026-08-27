@@ -22,12 +22,15 @@ from tools.init import tritonServer
 
 from api.infer.Utils.result_utils import logic_run
 from api.infer.Utils.class_info import CameraInfo
-from tools.concurrency import get_logic_executor
+from tools.concurrency import get_executor, get_logic_executor
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger_model
 from tools.logger_tools import CangQiong_Smart_Vllm_logger as logger_vllm
 from fastapi.responses import JSONResponse
 
-executor = get_logic_executor()
+request_executor = get_executor(
+    "REQUEST_MAX_WORKERS", default_scale=1, hard_cap=8, prefix="request"
+)
+logic_executor = get_logic_executor()
 router = APIRouter()
 
 
@@ -188,7 +191,7 @@ def _run_analyse_sync(camerInfo, setsLabel, label_rules):
             unlogicAnalysisList.extend(firstResultInLogic)
 
     for key, boundingboxs in logicAnalysisDict.items():
-        fuctureList.append(executor.submit(
+        fuctureList.append(logic_executor.submit(
             logic_run, camerInfo.imgsList, copy.deepcopy(boundingboxs), camerInfo, key, tritonServer, label_rules))
 
     logicResults = []
@@ -227,11 +230,11 @@ async def analyse(request: AnalyseRequestModel):
     logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
 
     loop = asyncio.get_event_loop()
-    camerInfo.imgsList = await loop.run_in_executor(executor, imgRead, camerInfo)
+    camerInfo.imgsList = await loop.run_in_executor(request_executor, imgRead, camerInfo)
 
     setsLabel = set(request.inferLabels)
     allAnalysisDict = await loop.run_in_executor(
-        executor, _run_analyse_sync, camerInfo, setsLabel, label_rules)
+        request_executor, _run_analyse_sync, camerInfo, setsLabel, label_rules)
 
     logger_model.info(allAnalysisDict)
     return allAnalysisDict
@@ -265,7 +268,7 @@ async def analyse_byte(
             return imgs
 
         loop = asyncio.get_event_loop()
-        imgs = await loop.run_in_executor(executor, decode_images, raw_contents)
+        imgs = await loop.run_in_executor(request_executor, decode_images, raw_contents)
         if not imgs:
             logger_model.warning(f"DeviceID [{deviceId}] -- 图片解码失败")
             return JSONResponse(
@@ -292,7 +295,7 @@ async def analyse_byte(
             setsLabel = {inferLabels}
 
         allAnalysisDict = await loop.run_in_executor(
-            executor, _run_analyse_sync, camerInfo, setsLabel, label_rules)
+            request_executor, _run_analyse_sync, camerInfo, setsLabel, label_rules)
 
         timeout = time.time() - start_total
         logger_model.info(f"小模型推理总耗时: {timeout:.4f}s ")
