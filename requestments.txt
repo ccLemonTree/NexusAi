@@ -2,6 +2,7 @@ dotenv
 fastapi
 requests
 opencv-python
+openai
 pymilvus
 tritonclient[all]
 sympy
