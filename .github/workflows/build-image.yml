@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build-and-push:
-    runs-on: [self-hosted, linux, docker]
+    runs-on: self-hosted
     env:
       IMAGE: aisfh5.com:9091/nexusai/nexusai-http
     steps:

@@ -10,6 +10,7 @@ class GitHubActionsWorkflowTest(unittest.TestCase):
         self.assertIn("aisfh5.com:9091/nexusai/nexusai-http", content)
         self.assertIn("REGISTRY_USERNAME", content)
         self.assertIn("REGISTRY_PASSWORD", content)
+        self.assertIn("runs-on: self-hosted", content)
         self.assertIn("TZ=Asia/Shanghai", content)
         self.assertIn("docker build", content)
         self.assertIn("docker push", content)
