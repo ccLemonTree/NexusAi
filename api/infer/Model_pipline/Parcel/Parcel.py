@@ -13,10 +13,16 @@ class Model(ModelClass):
         try:
             boundingboxs = []
             labels = cfg.logicModelDict[self.logicModelName][1]['label']
+            rer_conf = cfg.logicModelDict[self.logicModelName]["param"][2]["box_conf"]
+            label_rules = {
+                label: {"conf": float(rer_conf), "iou": 0.2}
+                for label in labels
+            }
             for info in self.logicResult:
-                cut_img = self.picture[info.y1+20:info.y2+20, info.x1+20:info.x2+20]
+                cut_img = self.picture[info.y1+10:info.y2+10, info.x1+10:info.x2+10]
                 # cv2.imwrite("123.jpg", cut_img)
-                result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo, box_info=info)
+
+                result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo, box_info=info, label_rules=label_rules)
                 if len(result) !=0:
                     info.classname = self.logicModelName
                     boundingboxs.append(info)

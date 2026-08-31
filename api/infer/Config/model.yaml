@@ -348,6 +348,8 @@ Parcel-person:
       desc: 置信度
     - iou: 0.2
       desc: 重叠度
+    - box_conf: 0.8
+      desc: 重排序置信度
   label_desc: 人拿包裹
   show: true
 

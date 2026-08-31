@@ -51,7 +51,7 @@
   "model_version": [
     1
   ],
-  "conf_thres": 0.85,
+  "conf_thres": 0.8,
   "iou_thres": 0.5,
   "parameters": {},
   "classes": [
@@ -72,10 +72,10 @@
     "sam3_Person",
     "sam3_Fishing",
     "sam3_People swimming",
-    "sam3_Bare-chested",
+    "sam3_Bare‑chested",
     "sam3_People fighting",
     "sam3_Crowd gathering",
-    "sam3_Banner-waver",
+    "sam3_Banner‑waver",
     "sam3_Fallen person",
     "sam3_The sweeper",
     "sam3_Chef's hat",
@@ -126,11 +126,18 @@
     "sam3_License plate",
     "sam3_ev charging gun",
     "sam3_Litter",
-    "sam3_Banner",
     "sam3_Construction debris",
     "sam3_Advertisement sticker",
     "sam3_Paper notice",
-    "sam3_Fishing rod"
+    "sam3_Fishing rod",
+    "sam3_Dump Truck",
+    "sam3_construction waste",
+    "sam3_Heavy Truck",
+    "sam3_Light Truck",
+    "sam3_Medium Truck",
+    "sam3_Tank Truck",
+    "sam3_Box Truck",
+    "sam3_Green algae"
   ],
   "classes_zh": [
     "人脸",
@@ -204,11 +211,16 @@
     "车牌",
     "充电枪",
     "垃圾",
-    "横幅",
     "建筑垃圾",
     "卡片",
     "传单",
-    "鱼竿"
+    "鱼竿",
+    "货运车辆",
+    "重卡",
+    "小货车",
+    "中卡",
+    "箱式货车",
+    "绿藻"
   ],
   "show": "true"
 }
