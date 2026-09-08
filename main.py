@@ -87,4 +87,4 @@ if __name__ == '__main__':
     for route in app.routes:
         if hasattr(route, "methods"):  # 过滤非HTTP路由（如WebSocket）
             print(f"  - {route.path} [{', '.join(sorted(route.methods))}]")
-    uvicorn.run(app, host="0.0.0.0", port=10012)
+    uvicorn.run(app, host="0.0.0.0", port=10013)

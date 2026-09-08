@@ -17,6 +17,8 @@ from api.infer.Triton_model.fastvlm.fastvlm_detector import fastvlm_detector
 from tools.concurrency import get_triton_pool, get_triton_pool_smoking
 from api.infer.Triton_model.yolov26det.yolov26_detector import yolov26det
 from api.infer.Triton_model.ocr.ocr_detector import ocr_det
+from api.infer.Triton_model.rfdetr.rfdetr_detector import rfdetr
+
 def none(a,b,c,d,e, box_info=""):
     return [],[]
 
@@ -41,6 +43,7 @@ class triton_inference:
             "yolov11cls":yolov11cls,
             "yolov26det":yolov26det,
             "ocr":ocr_det,
+            "rfdetr":rfdetr,
             "none": none,
         }
     # 索检代码仓库

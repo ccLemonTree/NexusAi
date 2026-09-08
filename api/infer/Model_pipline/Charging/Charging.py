@@ -1,7 +1,6 @@
 from api.infer.Utils.class_info import ModelClass
 from tools.init import cfg
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger
-from api.infer.running import analyseRun
 
 
 class Model(ModelClass):
@@ -17,21 +16,15 @@ class Model(ModelClass):
 
     def execute(self):
         try:
-            labels = cfg.logicModelDict[
-                self.logicModelName
-            ][1]["label"]
-
-            # 单个标签只对原图推理一次
-            result = analyseRun(
-                labels,
-                [self.picture,self.picture],
-                self.cameraInfo,
-            )
+            labels = cfg.logicModelDict[self.logicModelName][0]['label']
+            result = [box for box in self.logicResult if box.classname == labels[-1]]
 
             boundingboxs = []
 
             for info in self.logicResult:
-                # 当前框与第二个标签结果相交则排除
+                if info.classname == labels[-1]:
+                    continue
+                # 当前充电枪框与车辆框相交则排除
                 if any(
                     self.boxes_intersect(info, result_box)
                     for result_box in result

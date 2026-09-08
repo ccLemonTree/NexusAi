@@ -340,8 +340,6 @@ Parcel-person:
   0:
     label:
       - sam3_Person
-  1:
-    label:
       - sam3_Cardboard box
   param:
     - conf: 0.85
@@ -372,8 +370,6 @@ Charging-gun:
   0:
     label:
       - sam3_ev charging gun
-  1:
-    label:
       - sam3_Car
   param:
     - conf: 0.85
@@ -422,8 +418,6 @@ Stray-dog:
   0:
     label:
       - sam3_Dog
-  1:
-    label:
       - sam3_Person
   param:
     - conf: 0.8
@@ -439,8 +433,6 @@ Sticker-person:
     label:
       - sam3_Advertisement sticker
       - sam3_Paper notice
-  1:
-    label:
       - sam3_Person
   param:
     - conf: 0.8
@@ -454,8 +446,6 @@ Fishing-person:
   0:
     label:
       - sam3_Fishing rod
-  1:
-    label:
       - sam3_Person
   param:
     - conf: 0.8
@@ -463,4 +453,18 @@ Fishing-person:
     - iou: 0.2
       desc: 重叠度
   label_desc: 钓鱼
+  show: true
+
+Dog-leash:
+  0:
+    label:
+      - sam3_Dog
+      - sam3_Person
+      - sam3_Leash
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 遛狗未牵绳
   show: true

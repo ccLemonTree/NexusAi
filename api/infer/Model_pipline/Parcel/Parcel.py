@@ -1,36 +1,34 @@
-import cv2
-import numpy as np
-
 from api.infer.Utils.class_info import ModelClass
-from api.infer.Utils.boundingbox import BoundingBox
 from tools.init import cfg
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger
-from api.infer.running import analyseRun
 
 class Model(ModelClass):
+
+    @staticmethod
+    def boxes_intersect(box1, box2):
+        return (
+            box1.x1 < box2.x2
+            and box1.x2 > box2.x1
+            and box1.y1 < box2.y2
+            and box1.y2 > box2.y1
+        )
 
     def execute(self):
         try:
             boundingboxs = []
-            labels = cfg.logicModelDict[self.logicModelName][1]['label']
-            rer_conf = cfg.logicModelDict[self.logicModelName]["param"][2]["box_conf"]
-            label_rules = {
-                label: {"conf": float(rer_conf), "iou": 0.2}
-                for label in labels
-            }
+            labels = cfg.logicModelDict[self.logicModelName][0]['label']
+            parcels = [box for box in self.logicResult if box.classname == labels[-1]]
             for info in self.logicResult:
-                cut_img = self.picture[info.y1+10:info.y2+10, info.x1+10:info.x2+10]
-                # cv2.imwrite("123.jpg", cut_img)
-
-                result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo, box_info=info, label_rules=label_rules)
-                if len(result) !=0:
+                if info.classname == labels[-1]:
+                    continue
+                if any(self.boxes_intersect(info, parcel) for parcel in parcels):
                     info.classname = self.logicModelName
                     boundingboxs.append(info)
-            return boundingboxs,[]
+            return boundingboxs, []
         except Exception as e:
             logger.error(f"{self.logicModelName} {e}")
             logger.error(e.__traceback__.tb_frame.f_globals["__file__"])
             logger.error(e.__traceback__.tb_lineno)
 
-        return [],[]
+        return [], []
 

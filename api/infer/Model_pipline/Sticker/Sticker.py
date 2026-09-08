@@ -9,7 +9,6 @@
 from api.infer.Utils.class_info import ModelClass
 from tools.init import cfg
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger
-from api.infer.running import analyseRun
 from api.infer.Utils.boundingbox import BoundingBox
 
 class Model(ModelClass):
@@ -17,15 +16,13 @@ class Model(ModelClass):
     def execute(self):
         try:
             boundingboxs = []
-            labels = cfg.logicModelDict[self.logicModelName][1]['label']
+            labels = cfg.logicModelDict[self.logicModelName][0]['label']
+            second_result = [box for box in self.logicResult if box.classname == labels[-1]]
 
-            # ========== 二次检测：传入整张原图，不再裁剪子图 ==========
-            # 传入完整图片 self.picture，注意analyseRun入参格式
-            second_result = analyseRun(labels, [self.picture, self.picture], self.cameraInfo, label_rules=self.labelRules, box_info=None)
-
-            # 遍历第一次检测出来的原始框
             for info in self.logicResult:
-                # 判断：原始框 info 是否和二次检测结果中任意一个框相邻
+                if info.classname == labels[-1]:
+                    continue
+                # 判断：当前目标框是否和任意人物框相邻
                 matched_box = None
                 for sec_box in second_result:
                     if self.is_box_adjacent(info, sec_box):

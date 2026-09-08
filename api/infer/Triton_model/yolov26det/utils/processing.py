@@ -71,17 +71,36 @@ def preprocess(img: np.ndarray, input_shape=(640, 640), stride=32):
     return input_tensor, meta
 
 
-def postprocess(output, origin_w, origin_h, input_shape, conf_th=0.5, nms_threshold=0.5, label_names=None):
+def postprocess(
+    output,
+    origin_w,
+    origin_h,
+    input_shape,
+    conf_th=0.5,
+    nms_threshold=0.5,
+    label_names=None,
+    min_expand_ratio=0.1,
+    max_expand_ratio=1.5,
+    ratio_threshold=0.3
+):
     """
     专为 YOLO26 TensorRT [1, 300, 6] 格式适配的后处理方法
-    (已移除冗余的 NMS 逻辑，完美对接你的 Letterbox 逆映射)
+
+    动态外扩规则：
+    1. 先计算目标框面积占原图面积的比例 box_ratio
+    2. 如果 box_ratio 越小，说明目标越小，外扩比例越接近 max_expand_ratio
+    3. 如果 box_ratio 越大，说明目标越大，外扩比例越接近 min_expand_ratio
+
+    参数说明：
+    - ratio_threshold: 目标框面积 / 原图面积 的阈值
+    - min_expand_ratio: 大目标时最小外扩比例
+    - max_expand_ratio: 小目标时最大外扩比例
     """
     if label_names is None:
         label_names = []
 
-    # 1. 调整输出维度 [1, 300, 6] -> [300, 6]
     if len(output.shape) == 3:
-        pred = output[0]  # 直接取第一个 batch，shape 变为 (300, 6)
+        pred = output[0]
     else:
         pred = output
 
@@ -89,43 +108,70 @@ def postprocess(output, origin_w, origin_h, input_shape, conf_th=0.5, nms_thresh
     if len(pred) == 0:
         return detected_objects
 
-    # 2. 计算 Letterbox 的逆映射参数（保持你原有的逻辑）
-    # gain = 旧图 / 新图 的缩放比例 (取宽高中较小的那个，保持等比例)
-    gain = min(input_shape[1] / origin_w, input_shape[0] / origin_h) 
-    
-    # pad_x, pad_y 是在 640x640 画布上单侧填充的灰边像素数
+    gain = min(input_shape[1] / origin_w, input_shape[0] / origin_h)
     pad_x = (input_shape[1] - origin_w * gain) / 2
     pad_y = (input_shape[0] - origin_h * gain) / 2
 
-    # 3. 遍历 YOLO26 直接输出的 300 个候选框
+    image_area = origin_w * origin_h
+
     for b in pred:
-        # YOLO26 默认输出格式通常为: [x1, y1, x2, y2, score, cls_id]
         x1, y1, x2, y2, score, cls_id = b
-        
-        # 4. 置信度过滤
+
         if score < conf_th:
             continue
-            
+
         cls_id = int(cls_id)
 
-        # 5. 减去灰边，并除以缩放系数，还原到原图物理尺寸
         x1_scaled = (x1 - pad_x) / gain
         y1_scaled = (y1 - pad_y) / gain
         x2_scaled = (x2 - pad_x) / gain
         y2_scaled = (y2 - pad_y) / gain
 
-        # 6. 裁剪越界坐标（防止预测框超出原图边界）
+        box_w = x2_scaled - x1_scaled
+        box_h = y2_scaled - y1_scaled
+
+        if box_w <= 0 or box_h <= 0:
+            continue
+
+        # 目标框占原图面积的比例
+        box_ratio = (box_w * box_h) / image_area
+
+        # 动态计算外扩比例
+        if box_ratio < ratio_threshold:
+            # 越小的框，expand_ratio 越接近 max_expand_ratio
+            scale = 1.0 - (box_ratio / ratio_threshold)
+            expand_ratio = min_expand_ratio + (max_expand_ratio - min_expand_ratio) * scale
+        else:
+            # 大于阈值的框，使用较小外扩
+            expand_ratio = min_expand_ratio
+
+        expand_w = box_w * expand_ratio / 2
+        expand_h = box_h * expand_ratio / 2
+
+        x1_scaled -= expand_w
+        y1_scaled -= expand_h
+        x2_scaled += expand_w
+        y2_scaled += expand_h
+
         x1_scaled = max(0, min(origin_w, x1_scaled))
         y1_scaled = max(0, min(origin_h, y1_scaled))
         x2_scaled = max(0, min(origin_w, x2_scaled))
         y2_scaled = max(0, min(origin_h, y2_scaled))
 
-        # 7. 获取类别名称
         label_name = label_names[cls_id] if cls_id < len(label_names) else f"ID_{cls_id}"
 
-        # 8. 封装进你原有的 BoundingBox 对象
         detected_objects.append(
-            BoundingBox(cls_id, score, x1_scaled, x2_scaled, y1_scaled, y2_scaled, origin_w, origin_h, label_name)
+            BoundingBox(
+                cls_id,
+                score,
+                x1_scaled,
+                x2_scaled,
+                y1_scaled,
+                y2_scaled,
+                origin_w,
+                origin_h,
+                label_name
+            )
         )
 
     return detected_objects

@@ -137,7 +137,8 @@
     "sam3_Medium Truck",
     "sam3_Tank Truck",
     "sam3_Box Truck",
-    "sam3_Green algae"
+    "sam3_Green algae",
+    "sam3_Leash"
   ],
   "classes_zh": [
     "人脸",
@@ -216,11 +217,14 @@
     "传单",
     "鱼竿",
     "货运车辆",
+    "建筑垃圾",
     "重卡",
     "小货车",
     "中卡",
+    "油罐车",
     "箱式货车",
-    "绿藻"
+    "绿藻",
+    "绳子"
   ],
   "show": "true"
 }

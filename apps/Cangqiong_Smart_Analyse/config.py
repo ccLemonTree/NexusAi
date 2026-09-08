@@ -71,11 +71,11 @@ async def abilityProvided():
                             name: {
                                 "status": status,
                                 "params": [{
-                                        "conf": 0.65,
+                                        "conf": data["conf_thres"],
                                         "desc": "置信度"
                                     },
                                     {
-                                        "iou": 0.2,
+                                        "iou": data["iou_thres"],
                                         "desc": "重叠度"
                                     }
                                 ],
