@@ -17,7 +17,10 @@ class Model(ModelClass):
         try:
             boundingboxs = []
             labels = cfg.logicModelDict[self.logicModelName][0]['label']
-            parcels = [box for box in self.logicResult if box.classname == labels[-1]]
+            parcels = [
+                box for box in self.logicResult
+                if box.classname == labels[-1] and box.width() >= 30 and box.height() >= 30
+            ]
             for info in self.logicResult:
                 if info.classname == labels[-1]:
                     continue
