@@ -468,3 +468,28 @@ Dog-leash:
       desc: 重叠度
   label_desc: 遛狗未牵绳
   show: true
+
+
+chushai-fire:
+  0:
+    label:
+      - rf_firemd
+  param:
+    - conf: 0.2
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 初筛火情
+  show: true
+
+chushai-smoke:
+  0:
+    label:
+      - rf_smokemd
+  param:
+    - conf: 0.2
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 初筛烟雾
+  show: true

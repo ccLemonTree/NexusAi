@@ -53,17 +53,14 @@ class TritonClientPool:
     池大小由环境变量 TRITON_POOL_SIZE 控制，默认 16。
     """
 
-    def __init__(self, url: str, pool_size: int = None):
+    def __init__(self, url: str, pool_size: int = None, headless_env: str = "TRITON_SERVER_HEADLESS"):
         if pool_size is None:
             pool_size = int(os.getenv("TRITON_POOL_SIZE", "70"))
 
         # 优先使用 headless service 地址，没有则用传入的 url
-        headless_url = os.getenv(
-            "TRITON_SERVER_HEADLESS",
-            url.replace(
-                "triton-server.triton.svc.cluster.local",
-                "triton-server-headless.triton.svc.cluster.local"
-            )
+        headless_url = os.getenv(headless_env) or url.replace(
+            "triton-server.triton.svc.cluster.local",
+            "triton-server-headless.triton.svc.cluster.local"
         )
 
         self._pool: Queue = Queue(maxsize=pool_size)
@@ -115,6 +112,7 @@ class TritonClientPool:
 
 _triton_pool: TritonClientPool | None = None
 _triton_pool_smoking: TritonClientPool | None = None
+_vllm_triton_pool: TritonClientPool | None = None
 
 
 def get_triton_pool() -> TritonClientPool:
@@ -134,3 +132,13 @@ def get_triton_pool_smoking() -> TritonClientPool:
         url = os.getenv("TRITON_SERVER_SMOKING") or os.getenv("TRITON_SERVER", "localhost:8001")
         _triton_pool_smoking = TritonClientPool(url=url)
     return _triton_pool_smoking
+
+
+def get_vllm_triton_pool() -> TritonClientPool:
+    global _vllm_triton_pool
+    if _vllm_triton_pool is None:
+        url = os.getenv("VLLM_TRITON_SERVER")
+        if not url:
+            raise RuntimeError("VLLM_TRITON_SERVER is required for cangqiong inference")
+        _vllm_triton_pool = TritonClientPool(url=url, headless_env="VLLM_TRITON_SERVER_HEADLESS")
+    return _vllm_triton_pool

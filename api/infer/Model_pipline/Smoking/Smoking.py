@@ -1,9 +1,9 @@
 import time
 import numpy as np
+import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from api.infer.Utils.class_info import ModelClass
-from api.infer.Utils.boundingbox import BoundingBox
 from tools.init import cfg
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger
 from api.infer.running import analyseRun
@@ -18,6 +18,8 @@ def is_box_large_enough(box, min_size=15):
 
 class Model(ModelClass):
     def execute(self):
+        if not self.logicResult:
+            return [], []
         try:
             labels = cfg.logicModelDict[self.logicModelName][1]["label"]
             rer_conf = cfg.logicModelDict[self.logicModelName]["param"][2]["rer_conf"]
@@ -39,7 +41,12 @@ class Model(ModelClass):
                 logger.info(f"rer_conf: {rer_conf}, text1: {text1}, text2: {text2}")
 
                 start_time = time.time()
-                scores = reranker_client.rerank(cut_img, [text1, text2])
+                try:
+                    scores = reranker_client.rerank(cut_img, [text1, text2])
+                except requests.exceptions.ConnectionError as e:
+                    logger.warning(f"rerank 服务连接失败，保留 YOLO11 切片结果: {e}")
+                    info.classname = self.logicModelName
+                    return info
                 logger.info(f"重排序耗时：{time.time() - start_time}")
 
                 best_idx = int(np.argmax(scores))

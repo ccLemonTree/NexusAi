@@ -1,6 +1,8 @@
 dotenv
 fastapi
 requests
+httpx
+aioboto3
 opencv-python
 openai
 python-multipart
