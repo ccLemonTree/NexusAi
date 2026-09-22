@@ -15,6 +15,7 @@ from apps.Cangqiong_Smart_Search import config as search_config
 from apps.Cangqiong_Smart_Analyse import analyse
 from apps.Cangqiong_Smart_Analyse import config as analyse_config
 from apps.Alarm_Location import location
+from tools.init import vector_search_enabled
 from tools.logger_tools import app_logger, request_logger, error_logger, configure_logging
 
 # 以节点形式的路由
@@ -56,13 +57,14 @@ app.include_router(chat.router, prefix="/ai/seefor/api/chat", tags=["Chat"])
 app.include_router(getinfo.router, prefix="/ai/seefor/api/getinfo", tags=["Getinfo"])
 app.include_router(register.router, prefix="/ai/seefor/api/register", tags=["Register"])
 
-#人脸检索
-app.include_router(face_search.router, prefix="/ai/seefor/api/information", tags=["Face Search"])
+if vector_search_enabled:
+    #人脸检索
+    app.include_router(face_search.router, prefix="/ai/seefor/api/information", tags=["Face Search"])
 
-# 苍穹智搜
-app.include_router(insert.router,prefix="/ai/seefor/api/insert",tags=["insert"])
-app.include_router(search.router,prefix="/ai/seefor/api/search",tags=["search"])
-app.include_router(search_config.router,prefix="/ai/seefor/api/search/config",tags=["config"])
+    # 苍穹智搜
+    app.include_router(insert.router,prefix="/ai/seefor/api/insert",tags=["insert"])
+    app.include_router(search.router,prefix="/ai/seefor/api/search",tags=["search"])
+    app.include_router(search_config.router,prefix="/ai/seefor/api/search/config",tags=["config"])
 
 # 苍穹智眸
 app.include_router(analyse.router,prefix="/ai/seefor/api/analyse",tags=["analyse"])

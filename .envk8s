@@ -25,6 +25,7 @@ OBJ_SAVE_PIC_SHOWPATH = /ai/capture/back/search_pic
 OBJ_MAX_SAVE_GB = 10
 
 # 向量库
+VECTOR_SEARCH_ENABLED = true
 MILVUS_CLIENT = grpc://my-release-2-milvus.milvus.svc.cluster.local:19530
 # 向量数据库
 MILVUS_DB_NAME = vsearch
