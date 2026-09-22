@@ -36,6 +36,15 @@ logic_executor = get_logic_executor()
 router = APIRouter()
 
 
+async def _read_analyse_images(camerInfo):
+    if camerInfo.picType == "eos":
+        images = await asyncio.gather(*(load_eos_image(key) for key in camerInfo.imgsList))
+        return [image for image in images if image is not None]
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(request_executor, imgRead, camerInfo)
+
+
 class VLLMRequestModel(BaseModel):
     system: str
     question: str
@@ -490,10 +499,10 @@ async def analyse(request: AnalyseRequestModel):
     label_rules = {j['label']: j['analysisParams'] for j in request.labelDetails}
     logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
 
-    loop = asyncio.get_event_loop()
-    camerInfo.imgsList = await loop.run_in_executor(request_executor, imgRead, camerInfo)
+    camerInfo.imgsList = await _read_analyse_images(camerInfo)
 
     setsLabel = set(request.inferLabels)
+    loop = asyncio.get_running_loop()
     allAnalysisDict = await loop.run_in_executor(
         request_executor, _run_analyse_sync, camerInfo, setsLabel, label_rules)
 
@@ -507,7 +516,9 @@ async def analyse_byte(
     presetId: str = Form(default=""),
     inferLabels: str = Form(...),
     labelDetails: str = Form(...),
-    files: List[UploadFile] = File(..., description="需要推理的图片")
+    location: str = Form(default="file"),
+    inferData: str = Form(default=""),
+    files: Optional[List[UploadFile]] = File(default=None, description="需要推理的图片")
 ):
     try:
         logger_model.info(f"labelDetails:------{labelDetails}")
@@ -517,19 +528,33 @@ async def analyse_byte(
         label_rules = {j['label']: j['analysisParams'] for j in json.loads(labelDetails)}
         logger_model.info(f"label_rules:------{label_rules}")
 
-        raw_contents = [await f.read() for f in files]
+        camerInfo = CameraInfo()
+        camerInfo.deviceId = deviceId
+        camerInfo.presetId = presetId
+        camerInfo.picType = location
+        loop = asyncio.get_running_loop()
 
-        def decode_images(contents):
-            imgs = []
-            for content in contents:
-                nparr = np.frombuffer(content, np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if img is not None:
-                    imgs.append(img)
-            return imgs
+        if location == "eos":
+            eos_keys = json.loads(inferData)
+            if not isinstance(eos_keys, list):
+                raise ValueError("inferData 必须是 EOS key 的 JSON 数组")
+            camerInfo.imgsList = eos_keys
+            imgs = await _read_analyse_images(camerInfo)
+        else:
+            if not files:
+                raise ValueError("需要上传至少一个图片文件")
+            raw_contents = [await f.read() for f in files]
 
-        loop = asyncio.get_event_loop()
-        imgs = await loop.run_in_executor(request_executor, decode_images, raw_contents)
+            def decode_images(contents):
+                imgs = []
+                for content in contents:
+                    nparr = np.frombuffer(content, np.uint8)
+                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    if img is not None:
+                        imgs.append(img)
+                return imgs
+
+            imgs = await loop.run_in_executor(request_executor, decode_images, raw_contents)
         if not imgs:
             logger_model.warning(f"DeviceID [{deviceId}] -- 图片解码失败")
             return JSONResponse(
@@ -539,9 +564,6 @@ async def analyse_byte(
                     "error_detail": "请检查上传的文件流是否完整、是否为合法图片格式。"
                 }
             )
-        camerInfo = CameraInfo()
-        camerInfo.deviceId = deviceId
-        camerInfo.presetId = presetId
         camerInfo.imgsList = imgs
 
         logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
