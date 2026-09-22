@@ -54,4 +54,5 @@ ANALYSE_MAX_WORKERS=64    # 保持不变
 LOGIC_MAX_WORKERS=32      # 保持不变
 
 
+RERANK_ENABLED = true
 RERANKER_URL = http://reranker.reranker.svc.cluster.local:9036/v1/rerank/image-to-texts

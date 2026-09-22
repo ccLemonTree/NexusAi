@@ -1,7 +1,9 @@
 import time
+import os
 import numpy as np
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 from api.infer.Utils.class_info import ModelClass
 from tools.init import cfg
@@ -9,11 +11,42 @@ from tools.logger_tools import CangQiong_Smart_Model_logger as logger
 from api.infer.running import analyseRun
 from api.infer.qwen3_vl_reranker_client import Qwen3VLRerankerClient
 
-reranker_client = Qwen3VLRerankerClient()
+rerank_enabled = os.getenv("RERANK_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+reranker_client = Qwen3VLRerankerClient(timeout=(1, 30)) if rerank_enabled else None
+rerank_available = None
+rerank_probe_lock = Lock()
 
 
 def is_box_large_enough(box, min_size=15):
     return box.width() > min_size and box.height() > min_size
+
+
+def rerank(cut_img, texts):
+    global rerank_available
+
+    if not rerank_enabled or rerank_available is False:
+        return None
+
+    if rerank_available is None:
+        with rerank_probe_lock:
+            if rerank_available is False:
+                return None
+            if rerank_available is None:
+                try:
+                    scores = reranker_client.rerank(cut_img, texts)
+                except requests.exceptions.ConnectionError as e:
+                    rerank_available = False
+                    logger.warning(f"rerank 服务连接失败，后续跳过 rerank: {e}")
+                    return None
+                rerank_available = True
+                return scores
+
+    try:
+        return reranker_client.rerank(cut_img, texts)
+    except requests.exceptions.ConnectionError as e:
+        rerank_available = False
+        logger.warning(f"rerank 服务连接失败，后续跳过 rerank: {e}")
+        return None
 
 
 class Model(ModelClass):
@@ -41,10 +74,8 @@ class Model(ModelClass):
                 logger.info(f"rer_conf: {rer_conf}, text1: {text1}, text2: {text2}")
 
                 start_time = time.time()
-                try:
-                    scores = reranker_client.rerank(cut_img, [text1, text2])
-                except requests.exceptions.ConnectionError as e:
-                    logger.warning(f"rerank 服务连接失败，保留 YOLO11 切片结果: {e}")
+                scores = rerank(cut_img, [text1, text2])
+                if scores is None:
                     info.classname = self.logicModelName
                     return info
                 logger.info(f"重排序耗时：{time.time() - start_time}")
