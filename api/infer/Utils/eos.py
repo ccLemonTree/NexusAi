@@ -67,11 +67,13 @@ async def _get_eos_client(max_retries: int = 2):
 
 async def load_eos_image(key: str) -> Optional[np.ndarray]:
     timeout = int(os.getenv("EOS_TIMEOUT", "15"))
+    bucket = os.getenv("EOS_BUCKET", "")
+    eos_url = f"{os.getenv('EOS_ENDPOINT', '').rstrip('/')}/{bucket}/{key.lstrip('/')}"
     started = time.monotonic()
     try:
         s3 = await _get_eos_client()
         response = await asyncio.wait_for(
-            s3.get_object(Bucket=os.getenv("EOS_BUCKET", ""), Key=key),
+            s3.get_object(Bucket=bucket, Key=key),
             timeout=timeout,
         )
         data = await asyncio.wait_for(response["Body"].read(), timeout=timeout)
@@ -81,7 +83,7 @@ async def load_eos_image(key: str) -> Optional[np.ndarray]:
         logger_vllm.info(f"EOS 图片下载成功 耗时={time.monotonic() - started:.3f}s size={len(data)}B key={key[:120]}")
         return image
     except asyncio.TimeoutError:
-        logger_vllm.error(f"EOS 图片下载超时(>{timeout}s) key={key[:120]}")
+        logger_vllm.error(f"EOS 图片下载超时(>{timeout}s) eos_url={eos_url}")
     except Exception as e:
-        logger_vllm.error(f"EOS 图片下载失败 耗时={time.monotonic() - started:.3f}s: [{type(e).__name__}] {e}")
+        logger_vllm.error(f"EOS 图片下载失败 耗时={time.monotonic() - started:.3f}s eos_url={eos_url}: [{type(e).__name__}] {e}")
     return None

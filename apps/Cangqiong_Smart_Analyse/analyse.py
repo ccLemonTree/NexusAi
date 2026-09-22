@@ -500,6 +500,17 @@ async def analyse(request: AnalyseRequestModel):
     logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
 
     camerInfo.imgsList = await _read_analyse_images(camerInfo)
+    if not camerInfo.imgsList:
+        is_eos = camerInfo.picType == "eos"
+        logger_model.warning(f"DeviceID [{camerInfo.deviceId}] -- 图片下载或解码失败")
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": "图片下载失败" if is_eos else "图片解码失败",
+                "error_detail": "EOS 图片下载失败，请确认 EOS key 是否存在。" if is_eos
+                else "请检查图片数据是否完整、是否为合法图片格式。"
+            }
+        )
 
     setsLabel = set(request.inferLabels)
     loop = asyncio.get_running_loop()
