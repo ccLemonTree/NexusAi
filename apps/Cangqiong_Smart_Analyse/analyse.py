@@ -36,9 +36,10 @@ logic_executor = get_logic_executor()
 router = APIRouter()
 
 
-async def _read_analyse_images(camerInfo):
+async def _read_analyse_images(camerInfo, error_details=None):
     if camerInfo.picType == "eos":
-        images = await asyncio.gather(*(load_eos_image(key) for key in camerInfo.imgsList))
+        kwargs = {"error_details": error_details} if error_details is not None else {}
+        images = await asyncio.gather(*(load_eos_image(key, **kwargs) for key in camerInfo.imgsList))
         return [image for image in images if image is not None]
 
     loop = asyncio.get_running_loop()
@@ -165,17 +166,19 @@ async def openai_vllm_frame(request: VLLMFrameRequest):
 
         # 1b. 并发下载所有 EOS 图片
         eos_results = {}
+        eos_errors = {}
         if eos_tasks:
             logger_vllm.info(f"开始并发下载 {len(eos_tasks)} 张 EOS 图片")
 
             async def _download_eos_idx(idx, img_item):
+                errors = []
                 try:
-                    logger_vllm.info(f"第{idx}张图片 EOS 下载: key={img_item.data_value[:100]}")
-                    img = await load_eos_image(img_item.data_value)
-                    return (idx, img)
+                    logger_vllm.info(f"第{idx}张图片 EOS 下载: key={img_item.data_value}")
+                    img = await load_eos_image(img_item.data_value, error_details=errors)
+                    return (idx, img, errors)
                 except Exception as e:
-                    logger_vllm.warning(f"第{idx}张 EOS 图片下载异常: {e}")
-                    return (idx, None)
+                    errors.append(f"key={img_item.data_value}: [{type(e).__name__}] {e}")
+                    return (idx, None, errors)
 
             coros = [_download_eos_idx(idx, item) for idx, item in eos_tasks.items()]
             eos_outcomes = await asyncio.gather(*coros, return_exceptions=True)
@@ -184,11 +187,13 @@ async def openai_vllm_frame(request: VLLMFrameRequest):
                 if isinstance(outcome, Exception):
                     logger_vllm.error(f"EOS 并发下载异常: {outcome}")
                 else:
-                    idx, img = outcome
+                    idx, img, errors = outcome
                     if img is not None:
                         eos_results[idx] = img
                     else:
-                        logger_vllm.warning(f"第{idx}张 EOS 图片下载失败")
+                        detail = "; ".join(errors)
+                        eos_errors[str(idx)] = detail
+                        logger_vllm.warning(f"第{idx}张 EOS 图片下载失败: {detail}")
 
         # 1c. 按顺序合并所有解码结果
         decoded_imgs = []
@@ -203,7 +208,8 @@ async def openai_vllm_frame(request: VLLMFrameRequest):
             if idx not in direct_imgs and idx not in eos_results
         ]
         if failed_indices:
-            raise ValueError(f"图片下载或解码失败: {', '.join(failed_indices)}")
+            details = "; ".join(f"第{idx}张: {eos_errors[idx]}" if idx in eos_errors else idx for idx in failed_indices)
+            raise ValueError(f"图片下载或解码失败: {details}")
 
         if not decoded_imgs:
             raise ValueError("所有图片均解码失败")
@@ -499,16 +505,17 @@ async def analyse(request: AnalyseRequestModel):
     label_rules = {j['label']: j['analysisParams'] for j in request.labelDetails}
     logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
 
-    camerInfo.imgsList = await _read_analyse_images(camerInfo)
+    eos_errors = []
+    camerInfo.imgsList = await _read_analyse_images(camerInfo, error_details=eos_errors)
     if not camerInfo.imgsList:
         is_eos = camerInfo.picType == "eos"
-        logger_model.warning(f"DeviceID [{camerInfo.deviceId}] -- 图片下载或解码失败")
+        error_detail = "; ".join(eos_errors) if eos_errors else "未提供 EOS 图片 key。" if is_eos else "请检查图片数据是否完整、是否为合法图片格式。"
+        logger_model.warning(f"DeviceID [{camerInfo.deviceId}] -- {error_detail}")
         return JSONResponse(
             status_code=400,
             content={
                 "message": "图片下载失败" if is_eos else "图片解码失败",
-                "error_detail": "EOS 图片下载失败，请确认 EOS key 是否存在。" if is_eos
-                else "请检查图片数据是否完整、是否为合法图片格式。"
+                "error_detail": error_detail
             }
         )
 

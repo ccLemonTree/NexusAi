@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from typing import Optional
+from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -65,7 +65,7 @@ async def _get_eos_client(max_retries: int = 2):
         raise ConnectionError(f"EOS 客户端初始化失败，已重试 {max_retries} 次: {last_error}")
 
 
-async def load_eos_image(key: str) -> Optional[np.ndarray]:
+async def load_eos_image(key: str, *, error_details: Optional[List[str]] = None) -> Optional[np.ndarray]:
     timeout = int(os.getenv("EOS_TIMEOUT", "15"))
     bucket = os.getenv("EOS_BUCKET", "")
     eos_url = f"{os.getenv('EOS_ENDPOINT', '').rstrip('/')}/{bucket}/{key.lstrip('/')}"
@@ -83,7 +83,10 @@ async def load_eos_image(key: str) -> Optional[np.ndarray]:
         logger_vllm.info(f"EOS 图片下载成功 耗时={time.monotonic() - started:.3f}s size={len(data)}B key={key[:120]}")
         return image
     except asyncio.TimeoutError:
-        logger_vllm.error(f"EOS 图片下载超时(>{timeout}s) eos_url={eos_url}")
+        error_detail = f"EOS 图片下载超时(>{timeout}s) eos_url={eos_url}"
     except Exception as e:
-        logger_vllm.error(f"EOS 图片下载失败 耗时={time.monotonic() - started:.3f}s eos_url={eos_url}: [{type(e).__name__}] {e}")
+        error_detail = f"EOS 图片下载失败 耗时={time.monotonic() - started:.3f}s eos_url={eos_url}: [{type(e).__name__}] {e}"
+    logger_vllm.error(error_detail)
+    if error_details is not None:
+        error_details.append(error_detail)
     return None

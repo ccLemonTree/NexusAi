@@ -18,6 +18,11 @@ class ComposeTest(unittest.TestCase):
         for name in ("INFER_BACKEND", "TRITON_SERVER", "STRUCT_EMBEDDING_MODEL", "MILVUS_CLIENT"):
             self.assertIn(f"{name}:", compose)
 
+    def test_allows_reranker_to_be_disabled_without_a_url(self):
+        compose = pathlib.Path("docker-compose.yml").read_text(encoding="utf-8")
+        self.assertIn('RERANK_ENABLED: "${RERANK_ENABLED:-true}"', compose)
+        self.assertIn('RERANKER_URL: "${RERANKER_URL:-}"', compose)
+
 
 if __name__ == "__main__":
     unittest.main()
