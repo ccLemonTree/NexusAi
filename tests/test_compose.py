@@ -20,7 +20,7 @@ class ComposeTest(unittest.TestCase):
 
     def test_allows_reranker_to_be_disabled_without_a_url(self):
         compose = pathlib.Path("docker-compose.yml").read_text(encoding="utf-8")
-        self.assertIn('RERANK_ENABLED: "${RERANK_ENABLED:-true}"', compose)
+        self.assertIn('RERANK_ENABLED: "${RERANK_ENABLED:-false}"', compose)
         self.assertIn('RERANKER_URL: "${RERANKER_URL:-}"', compose)
 
 
