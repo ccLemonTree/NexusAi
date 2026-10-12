@@ -15,4 +15,4 @@ uvicorn
 jinja2
 psutil
 pyproj
-sklearn
+scikit-learn
