@@ -106,6 +106,11 @@ class VLLMFrameResponse(BaseModel):
 
 @router.post("/utils/vllm/frame", response_model=VLLMFrameResponse)
 async def openai_vllm_frame(request: VLLMFrameRequest):
+    request_data = request.model_dump()
+    for image in request_data["image_list"]:
+        if image["data_type"] == "base64":
+            image["data_value"] = "[Base64 图片内容已省略]"
+    logger_vllm.info(f"/utils/vllm/frame request: {request_data}")
     message = "successful"
     start_total = time.time()
     result_items = []
