@@ -138,7 +138,9 @@
     "sam3_Tank Truck",
     "sam3_Box Truck",
     "sam3_Green algae",
-    "sam3_Leash"
+    "sam3_Leash",
+    "sam3_Gas cylinder",
+    "sam3_Electric scooter"
   ],
   "classes_zh": [
     "人脸",
@@ -224,7 +226,9 @@
     "油罐车",
     "箱式货车",
     "绿藻",
-    "绳子"
+    "绳子",
+    "煤气罐",
+    "sam3_电瓶车"
   ],
   "show": "true"
 }
