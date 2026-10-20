@@ -35,7 +35,14 @@ def postprocess(
 ):
     """解码 RF-DETR 结果，并根据目标框大小动态向外扩展。"""
     boxes_cwh = dets[0]
-    logits = labels[0, :, :-1]  # 自定义数据集采用末位背景槽。
+    # label_names只包含业务类别，顺序必须与训练标签编号一致。
+    num_classes = len(label_names)
+    if num_classes == 0 or labels.shape[-1] < num_classes + 1:
+        raise ValueError(
+            f"模型类别输出维度为{labels.shape[-1]}，"
+            f"与业务类别数量{num_classes}不匹配"
+        )
+    logits = labels[0, :, :len(label_names)]
     scores_all = 1.0 / (1.0 + np.exp(-np.clip(logits, -88, 88)))
     class_ids = scores_all.argmax(axis=1)
     scores = scores_all.max(axis=1)
