@@ -29,7 +29,7 @@ class Model(ModelClass):
             silhouette_scores = []
             height,width,channle = self.picture.shape
             centers = [info.center_normalized() for info in self.logicResult]
-            dbscan = DBSCAN(eps=0.15, min_samples=2)  # eps是邻域的半径，min_samples是最小样本数
+            dbscan = DBSCAN(eps=0.1, min_samples=2)  # eps是邻域的半径，min_samples是最小样本数
             # 使用DBSCAN进行聚类
             labels = dbscan.fit_predict(centers)
             for index,value in enumerate(labels):

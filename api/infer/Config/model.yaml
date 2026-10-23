@@ -529,3 +529,19 @@ ReflectivevestYes-person:
       desc: 重叠度
   label_desc: 穿反光衣
   show: true
+
+Children-person:
+  0:
+    label:
+      - sam3_Children
+      - sam3_Person
+  1:
+    label:
+      - sam3_Person
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 幼童单人
+  show: true
