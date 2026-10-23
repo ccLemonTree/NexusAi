@@ -1,146 +1,85 @@
 # -*- coding: utf-8 -*-
 """
-@author chenhaolin
-@date 2022年11月29日 14:33:13
-@packageName Triton
-@className illegal_bicycle
-@version 1.0.0
-@describe TODO
+终极极简违停 —— 只靠底图文件时间判断
+逻辑：
+1. 看底图修改时间是否超过配置时间
+2. 没超过 → 直接返回空
+3. 超过了 → 底图跑AI + 当前帧AI做IOU=0.92匹配
+4. 匹配上 = 车没动 = 违停
+5. 违停才更新底图，不违停不更新
 """
-import os.path
-import uuid
+import os
+import cv2
 from datetime import datetime
-import pickle
-from tools.logger_tools import CangQiong_Smart_Model_logger as logger
-from api.infer.Utils.result_utils import iou
-from api.infer.Utils.utils import *
 from tools.init import cfg
 from api.infer.Utils.class_info import ModelClass
+from api.infer.running import analyseRun
+from api.infer.Utils.result_utils import iou  # 你项目里自带的IOU函数
 
 
-# from Utils.boundingbox import BoundingBox
 class Model(ModelClass):
-    def execute(self) -> [list, dict]:
-        pictures = []
-        cut_img = None
-        # 存在违停的 data
-        flag = False
-        have_list = ["save.jpeg","saveold.jpeg"]
-        result_list = []
+    def execute(self):
+        # 设备信息
         deviceid = self.cameraInfo.deviceId
         presetid = self.cameraInfo.presetId
-        filename = os.path.join(cfg.root_path,f"Picture_pkl/{deviceid}/{presetid}/{self.logicModelName}")
-        if os.path.isdir(filename) == False:
-            os.makedirs(filename)
-        dat_dirlist = os.listdir(filename)
-        for i in have_list:
-            if i in dat_dirlist:
-                dat_dirlist.remove(i)
-        # 没有 违停存在
-        labelinfo = cfg.logicModelDict[self.logicModelName][0]['label']
-        if len(dat_dirlist) == 0 and len(self.logicResult) > 0:
-            logger.info(
-                f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car  初次违停')
-            # 循环所有 car 打包返回违停
-            saveflag = False
-            for info in self.logicResult:
-                if info.classname in labelinfo:
-                    uuids = uuid.uuid4()
-                    saveflag = True
-                    try:
-                        cut_img = self.picture[info.y1:info.y2, info.x1:info.x2]
-                        cut_img = cv2.resize(cut_img, [235, 235])
-                    except:
-                        continue
-                    des_bak = phash(cut_img)
-                    with open(os.path.join(filename, str(uuids)), "wb") as f:
-                        pickle.dump({"boxs": [info.x1, info.x2, info.y1, info.y2], "vector": des_bak,
-                                     "updatetime": datetime.now(), "filename": str(uuids), "picture": cut_img}, f)
-            if saveflag:
-                if os.path.isfile(os.path.join(filename, "saveold.jpeg")):
-                    os.remove(os.path.join(filename, "saveold.jpeg"))
-                    os.rename(os.path.join(filename, "save.jpeg"), os.path.join(filename, "saveold.jpeg"))
-                cv2.imwrite(os.path.join(filename, "save.jpeg"), self.picture)
-            return [],pictures
-        # 读取 所有dat
-        dat_list = []
-        for file in dat_dirlist:
-            if os.path.isfile(os.path.join(filename, file)):
-                with open(os.path.join(filename, file), "rb") as f:
-                    dat_list.append(pickle.load(f))
-        # 正式开始 违停逻辑匹配
-        try:
-            logger.info(
-                f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car  遍历上次违停数据进行逻辑匹配{filename}/[{dat_dirlist}]')
-            # 匹配到的 box
-            matchIndex = [ ]
-            for ids, info in enumerate(self.logicResult):
-                if info.classname in labelinfo:
-                    try:
-                        cut_img = self.picture[info.y1:info.y2, info.x1:info.x2]
-                        cut_img = cv2.resize(cut_img, [235, 235])
-                    except:
-                        break
-                    des_bak = phash(cut_img)
-                    for jsobject, dat in enumerate(dat_list):
-                        # 对iou大于0.8 的进行相似度匹配
-                        if iou([info.x1, info.x2, info.y1, info.y2], dat['boxs']) > 0.85:
-                            distance = bin(des_bak ^ dat['vector']).count('1')
-                            similary = 1 - distance / max(len(bin(des_bak)), len(bin(des_bak)))
-                            if similary > 0.6:
-                                #logger.info(
-                                #    f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car  违停相似度比对通过]{similary} > 0.6')
-                                with open(os.path.join(filename, dat['filename']), "wb") as f:
-                                    pickle.dump({"boxs": [info.x1, info.x2, info.y1, info.y2], "vector": des_bak,
-                                                 "filename": dat['filename'], "picture": cut_img,
-                                                 "updatetime": dat['updatetime']}, f)
-                                    have_list.append(dat['filename'])
-                                    csecond = (datetime.now() - dat['updatetime']).seconds
-                                    btime = int(self.labelRules[self.logicModelName].get('time', 300))
-                                    # if (datetime.now()-dat['updatetime']).seconds > int(cfg.logicModelDict[self.modelName][-1].get('time',300)):
-                                    if (csecond > btime) and ((datetime.now() - datetime.fromtimestamp(
-                                            os.path.getmtime(os.path.join(filename, "save.jpeg")))).seconds > btime):
-                                        #logger.info(
-                                        #    f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car  违停时间大于{btime}')
-                                        info.classname = self.logicModelName
-                                        result_list.append(info)
-                                        flag = True
-                                matchIndex.append(ids)
-                                break
+        logic_name = self.logicModelName
 
+        # 配置时间
+        check_time = int(self.labelRules.get(logic_name, {}).get("time", 300))
 
-            for index,info in enumerate(self.logicResult):
-                if index not in matchIndex:
-                    try:
-                        cut_img = self.picture[info.y1:info.y2, info.x1:info.x2]
-                        cut_img = cv2.resize(cut_img, [235, 235])
-                    except:
-                        continue
-                    uuids = uuid.uuid4()
-                    des_bak = phash(cut_img)
-                    with open(os.path.join(filename, str(uuids)), "wb") as f:
-                        pickle.dump({"boxs": [info.x1, info.x2, info.y1, info.y2], "vector": des_bak,
-                                     "updatetime": datetime.now(), "picture": cut_img, "filename": str(uuids)},
-                                    f)
-                        have_list.append(str(uuids))
-            # 违停重新计算
-            images_list = []
-            if flag:
-                savejpeg = cv2.imread(os.path.join(filename, "save.jpeg"))
-                images_list = [self.pic2base64(savejpeg)] # 违停前
-                cv2.imwrite(os.path.join(filename, "saveold.jpeg"), savejpeg)
-                cv2.imwrite(os.path.join(filename, "save.jpeg"), self.picture)
-            for datname in os.listdir(filename):
-                if datname not in have_list:
-                    os.remove(os.path.join(filename, datname))
-            return result_list,images_list
-        except Exception as e:
-            logger.error(
-                f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car {e}')
-            logger.error(
-                f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car {e.__traceback__.tb_frame.f_globals["__file__"]}')
-            logger.error(
-                f'DeviceID [{self.cameraInfo.deviceId}] | Preset [{self.cameraInfo.presetId}] |  {self.cameraInfo.baseName} -> illegal-car {e.__traceback__.tb_lineno}')
-            return [],[]
-        finally:
-            del cut_img
+        # 底图路径
+        save_dir = os.path.join(cfg.root_path, f"Picture_pkl/{deviceid}/{presetid}/{logic_name}")
+        save_dir = f"E:/Picture_pkl/{deviceid}/{presetid}/{logic_name}"
+
+        os.makedirs(save_dir, exist_ok=True)
+        bg_path = os.path.join(save_dir, "bg.jpg")
+
+        result_list = []
+        img_list = []
+        now = datetime.now()
+
+        # ===================== 时间没到，直接返回空 =====================
+        if os.path.exists(bg_path):
+            file_time = datetime.fromtimestamp(os.path.getmtime(bg_path))
+            if (now - file_time).seconds < check_time:
+                return [], []
+
+        # ===================== 时间到了，开始判断 =====================
+        # 没有底图（第一次）→ 保存底图，返回空
+        if not os.path.exists(bg_path):
+            cv2.imwrite(bg_path, self.picture)
+            return [], []
+
+        # 1. 读取底图并跑AI分析
+        labels = cfg.logicModelDict[self.logicModelName][0]['label']
+        cut_img = cv2.imread(bg_path)
+        if cut_img is None:
+            cv2.imwrite(bg_path, self.picture)
+            return [], []
+
+        # 底图跑模型
+        bg_result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo)
+
+        # 2. 【核心】当前帧目标 和 底图目标 做 IOU 0.92 匹配
+        result_true = []
+        for current_obj in self.logicResult:
+            cur_box = [current_obj.x1, current_obj.x2, current_obj.y1, current_obj.y2]
+            # 和底图所有目标匹配
+            for bg_obj in bg_result:
+                bg_box = [bg_obj.x1, bg_obj.x2, bg_obj.y1, bg_obj.y2]
+                # IOU 超过 0.92 = 完全没动
+                if iou(cur_box, bg_box) >= 0.92:
+                    result_true.append(current_obj)
+                    break
+
+        # 3. 匹配上的目标 = 违停
+        for obj in result_true:
+            obj.classname = logic_name
+            result_list.append(obj)
+
+        # 4. 有违停 → 返回图片 + 更新底图
+        if result_list:
+            img_list = [self.pic2base64(self.picture)]
+            cv2.imwrite(bg_path, self.picture)
+
+        return result_list, img_list

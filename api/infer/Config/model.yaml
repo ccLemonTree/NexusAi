@@ -17,15 +17,15 @@ PlateSearch-car:
   show: false
 
 # 人脸识别
-Face_Rec-person:
+Face_Recs-person:
   0:
     label:
-      - sam3_Face
+      - face
   1:
     label:
       - face_vector
   param:
-    - conf: 0.1
+    - conf: 0.8
       desc: 置信度
     - iou: 0.2
       desc: 重叠度
@@ -33,6 +33,7 @@ Face_Rec-person:
       desc: 选取最大人脸数
   label_desc: 人脸识别
   show: true
+
 
 
 # 文搜人脸检测
@@ -61,6 +62,9 @@ LPRec-car:
       - car
       - truck
       - dwztc
+  1:
+    label:
+      - fastvlm_plate
   param:
     - conf: 0.8
       desc: 置信度
@@ -255,7 +259,7 @@ Ztctest-cls:
 Safehead-person:
   0:
     label:
-      - personnew
+      - sam3_Person
   1:
     label:
       - yolov5nohead
@@ -492,4 +496,36 @@ chushai-smoke:
     - iou: 0.2
       desc: 重叠度
   label_desc: 初筛烟雾
+  show: true
+
+
+ReflectivevestNo-person:
+  0:
+    label:
+      - sam3_Person
+  1:
+    label:
+      - sam3_Green Reflective Vest
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 非运维人员闯入
+  show: true
+
+
+ReflectivevestYes-person:
+  0:
+    label:
+      - sam3_Person
+  1:
+    label:
+      - sam3_Green Reflective Vest
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 穿反光衣
   show: true
