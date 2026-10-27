@@ -12,7 +12,7 @@ import time
 import numpy as np
 import tritonclient.grpc as grpcclient
 
-from api.infer.Triton_model.rfdetr.utils.processing import postprocess, preprocess
+from api.infer.Triton_model.rfdetr.utils.processing import merge_close_boxes, postprocess, preprocess
 
 
 def rfdetr(triton_client, service_name, init_data, img, label_to_detect, box_info, conf_thres=-1):
@@ -39,6 +39,7 @@ def rfdetr(triton_client, service_name, init_data, img, label_to_detect, box_inf
         for name, rule in label_to_detect.items()
     } if isinstance(label_to_detect, dict) else {}
     boxes = [box for box in boxes if box.confidence > thresholds.get(box.classname, conf_thres) and (not label_to_detect or box.classname in label_to_detect)]
+    boxes = merge_close_boxes(boxes)
     finished = time.time()
     time_json.update(Pretreatment=prepared - start, post_time=inferred - prepared, processing_time=finished - inferred)
     return boxes, time_json

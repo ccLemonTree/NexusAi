@@ -77,3 +77,39 @@ def postprocess(
         label_name = label_names[class_id] if class_id < len(label_names) else f"ID_{class_id}"
         results.append(BoundingBox(class_id, score, x1, x2, y1, y2, origin_w, origin_h, label_name))
     return results
+
+
+def merge_close_boxes(boxes, max_distance=200):
+    """将同标签且边缘距离不超过阈值的框连锁聚合，保留最高置信度。"""
+    merged = []
+    pending = list(boxes)
+    while pending:
+        group = [pending.pop(0)]
+        # 按原框的邻接关系扩展分组，避免外包矩形吸收不相邻的目标。
+        for current in group:
+            unmatched = []
+            for candidate in pending:
+                dx = max(current.x1 - candidate.x2, candidate.x1 - current.x2, 0)
+                dy = max(current.y1 - candidate.y2, candidate.y1 - current.y2, 0)
+                if current.classname == candidate.classname and dx * dx + dy * dy <= max_distance * max_distance:
+                    group.append(candidate)
+                else:
+                    unmatched.append(candidate)
+            pending = unmatched
+
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        best = max(group, key=lambda box: box.confidence)
+        merged.append(BoundingBox(
+            best.classID,
+            best.confidence,
+            min(box.x1 for box in group),
+            max(box.x2 for box in group),
+            min(box.y1 for box in group),
+            max(box.y2 for box in group),
+            best.image_width,
+            best.image_height,
+            best.classname,
+        ))
+    return merged
