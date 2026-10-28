@@ -37,10 +37,7 @@ class Model(ModelClass):
     def execute(self):
         try:
             boundingboxs = []
-            labels = cfg.logicModelDict[
-                self.logicModelName
-            ][1]["label"]
-
+            labels = "blue"
             if not labels:
                 logger.error(f"{self.logicModelName} label 配置为空")
                 return [], []
