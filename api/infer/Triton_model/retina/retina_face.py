@@ -98,8 +98,14 @@ def retina(triton_client, service_name, init_data, img, label_rules, box_info, c
         x1,y1,x2,y2 = box
         conf=np.clip(box[:4],0,1,dtype=float)[0]
         landms = np.array(landms,dtype=int).tolist()
+        landmark_dict = {}
+        key_list = ['left_eye', 'right_eye', 'nose', 'left_mouth_corner', 'right_mouth_corner']
+        for idx, name in enumerate(key_list):
+            x = landms[idx * 2]
+            y = landms[idx * 2 + 1]
+            landmark_dict[name] = [x, y]
         if conf>=(label_rules[label_name]['conf'] if isinstance(label_rules,dict) else conf_thres):
-            result_to_return.append(BoundingBox(0,conf,x1,x2,y1,y2,image_width,image_height,"face",parames_vector={'landms':landms}))
+            result_to_return.append(BoundingBox(0,conf,x1,x2,y1,y2,image_width,image_height,"face",parames_vector=landmark_dict.copy()))
 
     postprocessing_end = time.time()  # 时间测试
     time_json["Pretreatment"] = pretreatment_end - pretreatment_start
