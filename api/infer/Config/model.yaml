@@ -17,7 +17,7 @@ PlateSearch-car:
   show: false
 
 # 人脸识别
-Face_Recs-person:
+Face_Rec-person:
   0:
     label:
       - face
