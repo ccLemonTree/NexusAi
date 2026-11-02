@@ -10,76 +10,58 @@
 """
 import os
 import cv2
+import numpy as np
 from datetime import datetime
 from tools.init import cfg
 from api.infer.Utils.class_info import ModelClass
 from api.infer.running import analyseRun
 from api.infer.Utils.result_utils import iou  # 你项目里自带的IOU函数
+from tools.logic_state import atomic_write, locked_state
 
 
 class Model(ModelClass):
     def execute(self):
-        # 设备信息
-        deviceid = self.cameraInfo.deviceId
-        presetid = self.cameraInfo.presetId
         logic_name = self.logicModelName
 
         # 配置时间
         check_time = int(self.labelRules.get(logic_name, {}).get("time", 300))
 
-        # 底图路径
-        save_dir = os.path.join(cfg.root_path, f"Picture_pkl/{deviceid}/{presetid}/{logic_name}")
-        save_dir = f"E:/Picture_pkl/{deviceid}/{presetid}/{logic_name}"
+        with locked_state(self.cameraInfo, logic_name) as save_dir:
+            bg_path = save_dir / "bg.jpg"
+            result_list = []
+            img_list = []
+            cut_img = None
 
-        os.makedirs(save_dir, exist_ok=True)
-        bg_path = os.path.join(save_dir, "bg.jpg")
+            try:
+                # Open before reading metadata so NFS close-to-open consistency applies.
+                with bg_path.open("rb") as source:
+                    file_time = datetime.fromtimestamp(os.fstat(source.fileno()).st_mtime)
+                    if (datetime.now() - file_time).total_seconds() < check_time:
+                        return [], []
+                    contents = source.read()
+                    if contents:
+                        cut_img = cv2.imdecode(np.frombuffer(contents, dtype=np.uint8), cv2.IMREAD_COLOR)
+            except FileNotFoundError:
+                pass
 
-        result_list = []
-        img_list = []
-        now = datetime.now()
+            if cut_img is not None:
+                labels = cfg.logicModelDict[self.logicModelName][0]['label']
+                bg_result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo)
+                for current_obj in self.logicResult:
+                    cur_box = [current_obj.x1, current_obj.x2, current_obj.y1, current_obj.y2]
+                    for bg_obj in bg_result:
+                        bg_box = [bg_obj.x1, bg_obj.x2, bg_obj.y1, bg_obj.y2]
+                        if iou(cur_box, bg_box) >= 0.92:
+                            current_obj.classname = logic_name
+                            result_list.append(current_obj)
+                            break
 
-        # ===================== 时间没到，直接返回空 =====================
-        if os.path.exists(bg_path):
-            file_time = datetime.fromtimestamp(os.path.getmtime(bg_path))
-            if (now - file_time).seconds < check_time:
-                return [], []
+            if cut_img is None or result_list:
+                success, encoded = cv2.imencode(".jpg", self.picture)
+                if not success:
+                    raise ValueError("Failed to encode illegal parking baseline")
+                atomic_write(bg_path, encoded.tobytes())
+            if result_list:
+                img_list = [self.pic2base64(self.picture)]
 
-        # ===================== 时间到了，开始判断 =====================
-        # 没有底图（第一次）→ 保存底图，返回空
-        if not os.path.exists(bg_path):
-            cv2.imwrite(bg_path, self.picture)
-            return [], []
-
-        # 1. 读取底图并跑AI分析
-        labels = cfg.logicModelDict[self.logicModelName][0]['label']
-        cut_img = cv2.imread(bg_path)
-        if cut_img is None:
-            cv2.imwrite(bg_path, self.picture)
-            return [], []
-
-        # 底图跑模型
-        bg_result = analyseRun(labels, [cut_img, cut_img], self.cameraInfo)
-
-        # 2. 【核心】当前帧目标 和 底图目标 做 IOU 0.92 匹配
-        result_true = []
-        for current_obj in self.logicResult:
-            cur_box = [current_obj.x1, current_obj.x2, current_obj.y1, current_obj.y2]
-            # 和底图所有目标匹配
-            for bg_obj in bg_result:
-                bg_box = [bg_obj.x1, bg_obj.x2, bg_obj.y1, bg_obj.y2]
-                # IOU 超过 0.92 = 完全没动
-                if iou(cur_box, bg_box) >= 0.92:
-                    result_true.append(current_obj)
-                    break
-
-        # 3. 匹配上的目标 = 违停
-        for obj in result_true:
-            obj.classname = logic_name
-            result_list.append(obj)
-
-        # 4. 有违停 → 返回图片 + 更新底图
-        if result_list:
-            img_list = [self.pic2base64(self.picture)]
-            cv2.imwrite(bg_path, self.picture)
-
-        return result_list, img_list
+            return result_list, img_list
