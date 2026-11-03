@@ -77,12 +77,12 @@ LPRec-car:
 Reappear-person:
   0:
     label:
-      - personnew
+      - sam3_Person
   1:
     label:
-      - personnew
+      - sam3_Person
   param:
-    - conf: 0.8
+    - conf: 0.85
       desc: 置信度
     - iou: 0.2
       desc: 重叠度

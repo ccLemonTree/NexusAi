@@ -26,7 +26,7 @@ class Model(ModelClass):
         # 配置时间
         check_time = int(self.labelRules.get(logic_name, {}).get("time", 300))
 
-        with locked_state(self.cameraInfo, logic_name) as save_dir:
+        with locked_state(self.cameraInfo, logic_name, self.labelRules.get(logic_name, {})) as save_dir:
             bg_path = save_dir / "bg.jpg"
             result_list = []
             img_list = []

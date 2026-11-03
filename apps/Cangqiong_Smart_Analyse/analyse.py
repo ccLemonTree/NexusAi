@@ -17,6 +17,7 @@ from tools.init import tritonServer
 from api.infer.Utils.result_utils import logic_run
 from api.infer.Utils.class_info import CameraInfo
 from tools.concurrency import get_executor, get_logic_executor
+from tools.logic_state import state_key
 from tools.logger_tools import CangQiong_Smart_Model_logger as logger_model
 from tools.logger_tools import CangQiong_Smart_Vllm_logger as logger_vllm
 from fastapi.responses import JSONResponse
@@ -425,7 +426,56 @@ async def openai_vllm_byte(
     }
 
 
-def _run_analyse_sync(camerInfo, setsLabel, label_rules):
+def _run_analyse_sync(camerInfo, setsLabel, label_details):
+    if isinstance(label_details, dict):
+        label_details = [{"label": label, "analysisParams": rule} for label, rule in label_details.items()]
+
+    grouped_rules = {}
+    for label in setsLabel:
+        defaults = {
+            key: value
+            for param in cfg.logicModelDict.get(label, {}).get("param", [])
+            for key, value in param.items() if key != "desc"
+        }
+        configured = [item["analysisParams"] for item in label_details if item["label"] == label]
+        unique = {}
+        for params in configured or [{}]:
+            rule = {**defaults, **params}
+            for name in ("conf", "iou"):
+                if name in rule:
+                    rule[name] = float(rule[name])
+            if "time" in rule:
+                rule["time"] = int(rule["time"])
+            key = json.dumps(rule, sort_keys=True, separators=(",", ":"), allow_nan=False)
+            unique.setdefault(key, rule)
+        grouped_rules[label] = list(unique.values())
+
+    batches = [{label: rules[0] for label, rules in grouped_rules.items() if len(rules) == 1}]
+    # Separate passes keep repeated-label rules independent of other labels' detection settings.
+    batches.extend({label: rule} for label, rules in grouped_rules.items() if len(rules) > 1 for rule in rules)
+    results = {}
+    for batch_rules in batches:
+        if not batch_rules:
+            continue
+        batch_result = _run_analyse_batch(camerInfo, set(batch_rules), batch_rules)
+        for label, rule in batch_rules.items():
+            if len(grouped_rules[label]) == 1:
+                if label in batch_result:
+                    results[label] = batch_result[label]
+                continue
+            value = batch_result.get(label, {"bbox": [], "imglist": []})
+            combined = results.setdefault(label, {"bbox": [], "imglist": [], "rules": []})
+            combined["bbox"].extend(value["bbox"])
+            combined["imglist"].extend(value["imglist"])
+            combined["rules"].append({
+                "stateKey": state_key(camerInfo, label, rule),
+                "analysisParams": rule,
+                **value,
+            })
+    return results
+
+
+def _run_analyse_batch(camerInfo, setsLabel, label_rules):
     logicLabels = list(cfg.logicModelDict.keys())
     unlogicAnalysis = set()
     logicAnalysis = set()
@@ -507,7 +557,7 @@ async def analyse(request: AnalyseRequestModel):
     camerInfo.picType = request.location
     camerInfo.imgsList = request.inferData
     camerInfo.baseName = request.basename_pic
-    label_rules = {j['label']: j['analysisParams'] for j in request.labelDetails}
+    label_rules = request.labelDetails
     logger_model.info(f"DeviceID [{camerInfo.deviceId}] | {label_rules}")
 
     eos_errors = []
@@ -548,7 +598,7 @@ async def analyse_byte(
         logger_model.info(f"inferLabels:------{inferLabels}")
         start_total = time.time()
 
-        label_rules = {j['label']: j['analysisParams'] for j in json.loads(labelDetails)}
+        label_rules = json.loads(labelDetails)
         logger_model.info(f"label_rules:------{label_rules}")
 
         camerInfo = CameraInfo()

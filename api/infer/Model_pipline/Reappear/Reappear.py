@@ -9,7 +9,7 @@ from tools.logic_state import atomic_write, locked_state
 
 class Model(ModelClass):
     def execute(self):
-        with locked_state(self.cameraInfo, self.logicModelName) as directory:
+        with locked_state(self.cameraInfo, self.logicModelName, self.labelRules.get(self.logicModelName, {})) as directory:
             state_path = directory / "absence.json"
             if self.logicResult:
                 state_path.unlink(missing_ok=True)
