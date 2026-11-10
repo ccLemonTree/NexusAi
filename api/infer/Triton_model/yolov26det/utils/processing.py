@@ -79,23 +79,8 @@ def postprocess(
     conf_th=0.5,
     nms_threshold=0.5,
     label_names=None,
-    min_expand_ratio=0.1,
-    max_expand_ratio=1.5,
-    ratio_threshold=0.3
 ):
-    """
-    专为 YOLO26 TensorRT [1, 300, 6] 格式适配的后处理方法
-
-    动态外扩规则：
-    1. 先计算目标框面积占原图面积的比例 box_ratio
-    2. 如果 box_ratio 越小，说明目标越小，外扩比例越接近 max_expand_ratio
-    3. 如果 box_ratio 越大，说明目标越大，外扩比例越接近 min_expand_ratio
-
-    参数说明：
-    - ratio_threshold: 目标框面积 / 原图面积 的阈值
-    - min_expand_ratio: 大目标时最小外扩比例
-    - max_expand_ratio: 小目标时最大外扩比例
-    """
+    """将 YOLO26 TensorRT 输出的检测框映射回原图坐标。"""
     if label_names is None:
         label_names = []
 
@@ -111,8 +96,6 @@ def postprocess(
     gain = min(input_shape[1] / origin_w, input_shape[0] / origin_h)
     pad_x = (input_shape[1] - origin_w * gain) / 2
     pad_y = (input_shape[0] - origin_h * gain) / 2
-
-    image_area = origin_w * origin_h
 
     for b in pred:
         x1, y1, x2, y2, score, cls_id = b
@@ -132,26 +115,6 @@ def postprocess(
 
         if box_w <= 0 or box_h <= 0:
             continue
-
-        # 目标框占原图面积的比例
-        box_ratio = (box_w * box_h) / image_area
-
-        # 动态计算外扩比例
-        if box_ratio < ratio_threshold:
-            # 越小的框，expand_ratio 越接近 max_expand_ratio
-            scale = 1.0 - (box_ratio / ratio_threshold)
-            expand_ratio = min_expand_ratio + (max_expand_ratio - min_expand_ratio) * scale
-        else:
-            # 大于阈值的框，使用较小外扩
-            expand_ratio = min_expand_ratio
-
-        expand_w = box_w * expand_ratio / 2
-        expand_h = box_h * expand_ratio / 2
-
-        x1_scaled -= expand_w
-        y1_scaled -= expand_h
-        x2_scaled += expand_w
-        y2_scaled += expand_h
 
         x1_scaled = max(0, min(origin_w, x1_scaled))
         y1_scaled = max(0, min(origin_h, y1_scaled))
