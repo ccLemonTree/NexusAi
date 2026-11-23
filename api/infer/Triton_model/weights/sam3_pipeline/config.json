@@ -140,7 +140,8 @@
     "sam3_Green algae",
     "sam3_Leash",
     "sam3_Gas cylinder",
-    "sam3_Electric scooter"
+    "sam3_Electric scooter",
+    "sam3_self-balancing scooter"
   ],
   "classes_zh": [
     "人脸",
@@ -228,7 +229,8 @@
     "绿藻",
     "绳子",
     "煤气罐",
-    "sam3_电瓶车"
+    "sam3_电瓶车",
+    "平衡车"
   ],
   "show": "true"
 }
