@@ -15,6 +15,7 @@ from tools.init import client, chat_infer, cfg
 from api.infer.running import analyseRun
 from tools.init import tritonServer
 from api.infer.Utils.result_utils import logic_run
+from api.infer.Model_pipline.Wearable.Wearable import run_wearable_rules
 from api.infer.Utils.class_info import CameraInfo
 from tools.concurrency import get_executor, get_logic_executor
 from tools.logic_state import state_key
@@ -501,9 +502,13 @@ def _run_analyse_batch(camerInfo, setsLabel, label_rules):
     fuctureList = []
     logicAnalysisDict = {}
     unlogicAnalysisList = []
+    wearable_rules = {}
 
     for lab in setsLabel:
         logicFlag = lab in logicLabels
+        if logicFlag and lab.startswith("Wearable-"):
+            wearable_rules[lab] = label_rules.get(lab, {})
+            continue
         comparisonList = cfg.logicModelDict[lab][0]["label"] if logicFlag else [lab]
         conf_thres = label_rules.get(lab, {}).get("conf", 0)
         firstResultInLogic = [
@@ -518,19 +523,18 @@ def _run_analyse_batch(camerInfo, setsLabel, label_rules):
         else:
             unlogicAnalysisList.extend(firstResultInLogic)
 
+    if wearable_rules:
+        fuctureList.append(logic_executor.submit(
+            run_wearable_rules, camerInfo.imgsList[0], firstResult, camerInfo, cfg.logicModelDict, wearable_rules))
     for key, boundingboxs in logicAnalysisDict.items():
         fuctureList.append(logic_executor.submit(
             logic_run, camerInfo.imgsList, copy.deepcopy(boundingboxs), camerInfo, key, tritonServer, label_rules))
 
-    logicResults = []
+    logicResults = {}
     for fucture in fuctureList:
-        result = fucture.result()
-        if len(list(result.values())[0]['bbox']) == 0:
-            continue
-        for key, value in result.items():
-            for i in range(len(value['bbox'])):
-                value['bbox'][i] = value['bbox'][i].dict()
-        logicResults.append(result)
+        for key, value in fucture.result().items():
+            if value['bbox']:
+                logicResults[key] = {**value, 'bbox': [box.dict() for box in value['bbox']]}
 
     unlogicAnalysisDict = {}
     for info in unlogicAnalysisList:
@@ -540,8 +544,7 @@ def _run_analyse_batch(camerInfo, setsLabel, label_rules):
             unlogicAnalysisDict[info.classname] = get_unlogic_result
 
     unlogicAnalysisDicts = {k: {'bbox': v, "imglist": []} for k, v in unlogicAnalysisDict.items()}
-    for i in logicResults:
-        unlogicAnalysisDicts.update(i)
+    unlogicAnalysisDicts.update(logicResults)
 
     return unlogicAnalysisDicts
 

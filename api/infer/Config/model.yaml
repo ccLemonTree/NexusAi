@@ -621,3 +621,48 @@ Intrusion-exactly-one:
       desc: 重叠度
   label_desc: 人员入侵（仅1人）
   show: true
+
+Wearable-mask:
+  0:
+    label:
+      - sam3_Face
+  1:
+    label:
+      - sam3_Mask
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 人员口罩识别
+  show: true
+
+Wearable-sunglasses:
+  0:
+    label:
+      - sam3_Face
+  1:
+    label:
+      - sam3_Sunglasses
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 人员墨镜识别
+  show: true
+
+Wearable-hat:
+  0:
+    label:
+      - sam3_Face
+  1:
+    label:
+      - sam3_Hat
+  param:
+    - conf: 0.8
+      desc: 置信度
+    - iou: 0.2
+      desc: 重叠度
+  label_desc: 人员戴帽识别
+  show: true
