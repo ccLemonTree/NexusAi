@@ -141,7 +141,10 @@
     "sam3_Leash",
     "sam3_Gas cylinder",
     "sam3_Electric scooter",
-    "sam3_self-balancing scooter"
+    "sam3_self-balancing scooter",
+    "sam3_Hat",
+    "sam3_Sunglasses",
+    "sam3_Money"
   ],
   "classes_zh": [
     "人脸",
@@ -230,7 +233,11 @@
     "绳子",
     "煤气罐",
     "sam3_电瓶车",
-    "平衡车"
+    "平衡车",
+    "帽子",
+    "墨镜",
+    "现金"
+
   ],
   "show": "true"
 }

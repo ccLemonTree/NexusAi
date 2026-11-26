@@ -1,0 +1,177 @@
+# docker compose -f docker-compose.redis.yml up -d
+x-nexusai-env: &nexusai-env
+  NEXUSAI_HOME: /app
+  INFER_BACKEND: "${INFER_BACKEND:-fire}"
+  STRUCT_EMBEDDING_MODEL: "${STRUCT_EMBEDDING_MODEL:?STRUCT_EMBEDDING_MODEL is required}"
+  STRUCT_EMBEDDING_MODEL_NAME: "${STRUCT_EMBEDDING_MODEL_NAME:-Qwen2.5-VL-7B-Instruct}"
+  TRITON_POOL_SIZE: "${TRITON_POOL_SIZE:-8}"
+  ANALYSE_MAX_WORKERS: "${ANALYSE_MAX_WORKERS:-8}"
+  LOGIC_MAX_WORKERS: "${LOGIC_MAX_WORKERS:-4}"
+  REQUEST_MAX_WORKERS: "${REQUEST_MAX_WORKERS:-4}"
+  VECTOR_SEARCH_ENABLED: "${VECTOR_SEARCH_ENABLED:-false}"
+  MILVUS_CLIENT: "${MILVUS_CLIENT:-}"
+  MILVUS_DB_NAME: "${MILVUS_DB_NAME:-vsearch}"
+  MILVUS_VECTOR_COLLECTION_NAME: "${MILVUS_VECTOR_COLLECTION_NAME:-vector}"
+  MILVUS_VECTOR_FILTER_COLLECTION_NAME: "${MILVUS_VECTOR_FILTER_COLLECTION_NAME:-vector_filter}"
+  MILVUS_FACE_COLLECTION_NAME: "${MILVUS_FACE_COLLECTION_NAME:-face}"
+  MILVUS_PLATE_COLLECTION_NAME: "${MILVUS_PLATE_COLLECTION_NAME:-plate}"
+  MILVUS_FACE_DATABASE_COLLECTION_NAME: "${MILVUS_FACE_DATABASE_COLLECTION_NAME:-face_database}"
+  VLLM_BASE_URL: "${VLLM_BASE_URL:?VLLM_BASE_URL is required}"
+  VLLM_API_KEY: "${VLLM_API_KEY:-EMPTY}"
+  EOS_ENDPOINT: "${EOS_ENDPOINT:-}"
+  EOS_ACCESS_KEY: "${EOS_ACCESS_KEY:-}"
+  EOS_SECRET_KEY: "${EOS_SECRET_KEY:-}"
+  EOS_BUCKET: "${EOS_BUCKET:-}"
+  EOS_TIMEOUT: "${EOS_TIMEOUT:-15}"
+  RERANK_ENABLED: "${RERANK_ENABLED:-false}"
+  RERANKER_URL: "${RERANKER_URL:-}"
+  RERANK_TEXT_VECTOR_URL: "${RERANK_TEXT_VECTOR_URL:-}"
+  OBJ_SAVE_PIC_LOCPATH: "${OBJ_SAVE_PIC_LOCPATH:-/ai/capture/back/search_pic}"
+  OBJ_MAX_SAVE_GB: "${OBJ_MAX_SAVE_GB:-10}"
+  IMAGE_ROOT_DIR: "${IMAGE_ROOT_DIR:-/ai}"
+  LOGIC_STATE_DIR: /app/Picture_pkl
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_DB: "${REDIS_DB:-0}"
+  REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+  INFO_JSON: "${INFO_JSON:-/ai/capture/back/search_pic/vector_count.json}"
+
+x-triton-base: &triton-base
+  image: aisfh5.com:9091/triton-server/triton-server:25.11_py3_vllm
+  command:
+    - tritonserver
+    - --model-repository=/models
+    - --strict-model-config=false
+    - --log-verbose=1
+    - --model-control-mode=explicit
+    - --load-model=*
+  restart: unless-stopped
+  shm_size: "3g"
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  volumes:
+    - /ai/chen/code/huggingface/aiseefor_vllm_model:/models
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8000/v2/health/ready || exit 1"]
+    interval: 30s
+    start_period: 6m
+    timeout: 10s
+    retries: 10
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--requirepass", "${REDIS_PASSWORD:-}"]
+    environment:
+      REDISCLI_AUTH: "${REDIS_PASSWORD:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --raw ping | grep -qx PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nexusai: &nexusai-base
+    image: aisfh5.com:9091/nexusai/nexusai-http:v20260922155338
+    build: .
+    command: ["uvicorn", "main:app", "--workers", "4", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *nexusai-env
+      TRITON_SERVER: triton-server1:8001
+      VLLM_TRITON_SERVER: triton-server1:8001
+      TRITON_MODEL_STATUS: triton-server1:8000
+    ports:
+      - "10012:8000"
+    volumes:
+      - /ai/capture/back/search_pic:/ai/capture/back/search_pic
+      - nexusai-logic-state:/app/Picture_pkl
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  nexusai2:
+    <<: *nexusai-base
+    environment:
+      <<: *nexusai-env
+      TRITON_SERVER: triton-server2:8001
+      VLLM_TRITON_SERVER: triton-server2:8001
+      TRITON_MODEL_STATUS: triton-server2:8000
+    ports:
+      - "10013:8000"
+
+  nexusai3:
+    <<: *nexusai-base
+    environment:
+      <<: *nexusai-env
+      TRITON_SERVER: triton-server3:8001
+      VLLM_TRITON_SERVER: triton-server3:8001
+      TRITON_MODEL_STATUS: triton-server3:8000
+    ports:
+      - "10014:8000"
+
+  nexusai4:
+    <<: *nexusai-base
+    environment:
+      <<: *nexusai-env
+      TRITON_SERVER: triton-server4:8001
+      VLLM_TRITON_SERVER: triton-server4:8001
+      TRITON_MODEL_STATUS: triton-server4:8000
+    ports:
+      - "10015:8000"
+
+  triton-server1:
+    <<: *triton-base
+    container_name: triton-server1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [ gpu ]
+
+  triton-server2:
+    <<: *triton-base
+    container_name: triton-server2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [ gpu ]
+
+  triton-server3:
+    <<: *triton-base
+    container_name: triton-server3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["2"]
+              capabilities: [ gpu ]
+
+  triton-server4:
+    <<: *triton-base
+    container_name: triton-server4
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["3"]
+              capabilities: [ gpu ]
+
+volumes:
+  nexusai-logic-state:

@@ -28,6 +28,11 @@ x-nexusai-env: &nexusai-env
   OBJ_SAVE_PIC_LOCPATH: "${OBJ_SAVE_PIC_LOCPATH:-/ai/capture/back/search_pic}"
   OBJ_MAX_SAVE_GB: "${OBJ_MAX_SAVE_GB:-10}"
   IMAGE_ROOT_DIR: "${IMAGE_ROOT_DIR:-/ai}"
+  LOGIC_STATE_DIR: /app/Picture_pkl
+  REDIS_HOST: "${REDIS_HOST:-}"
+  REDIS_PORT: "${REDIS_PORT:-6379}"
+  REDIS_DB: "${REDIS_DB:-0}"
+  REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
   INFO_JSON: "${INFO_JSON:-/ai/capture/back/search_pic/vector_count.json}"
 
 x-triton-base: &triton-base
@@ -70,6 +75,7 @@ services:
       - "10012:8000"
     volumes:
       - /ai/capture/back/search_pic:/ai/capture/back/search_pic
+      - nexusai-logic-state:/app/Picture_pkl
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
       interval: 30s
@@ -150,3 +156,6 @@ services:
             - driver: nvidia
               device_ids: ["3"]
               capabilities: [ gpu ]
+
+volumes:
+  nexusai-logic-state:

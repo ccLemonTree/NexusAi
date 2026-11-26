@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 from pymilvus import MilvusClient,Function, FunctionType
 from api.infer.Triton_model.triton_client import triton_inference
@@ -20,3 +21,22 @@ chat_infer = infer_backend[os.getenv("INFER_BACKEND")](os.getenv("STRUCT_EMBEDDI
 tritonServer = triton_inference(os.path.join(os.getenv("NEXUSAI_HOME"),"api","infer","Triton_model","weights"),
                                 urls=[os.getenv("TRITON_SERVER")])
 cfg = Cfg()
+
+
+@lru_cache(maxsize=1)
+def get_redis_client():
+    """Return the Redis client shared by algorithms in this process."""
+    host = os.getenv("REDIS_HOST")
+    if not host:
+        raise ValueError("REDIS_HOST is required to use Redis")
+
+    from redis import Redis
+
+    return Redis(
+        host=host,
+        port=int(os.getenv("REDIS_PORT") or 6379),
+        db=int(os.getenv("REDIS_DB") or 0),
+        password=os.getenv("REDIS_PASSWORD") or None,
+        socket_connect_timeout=2,
+        socket_timeout=2,
+    )
